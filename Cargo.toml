@@ -1,69 +1,33 @@
 [package]
-authors = ["Philipp Korber <p.korber@1aim.com>"]
-categories = []
+name = "mail-codec-components"
+version = "0.0.1"
+authors = ["Philipp Korber <philippkorber@gmail.com>"]
 description = "TODO"
-documentation = "https://docs.rs/mail-codec"
-keywords = ["mail", "codec", "mime", "smtp"]
+documentation = "https://docs.rs/mail-codec-components"
+keywords = []
+categories = []
 license = "MIT OR Apache-2.0"
-name = "mail-codec"
-readme = "./README.md"
 repository = "https://github.com/1aim/mail-codec"
-version = "0.1.0"
-
-[badges]
-
-[badges.travis-ci]
-branch = "master"
-repository = "1aim/mail-codec"
 
 [dependencies]
-futures = "0.1.14"
-log = "0.3.8"
-mime = "0.3.2"
-rand = "0.3.15"
-scoped-tls = "0.1.0"
-serde = "1.0.10"
-serde_derive = "1.0.10"
+nom = "3.1.0"
+quick-error = "1.2.1"
+soft-ascii-string = "0.2"
+quoted-string = { git="https://github.com/1aim/quoted-string", version="0.5" }
+mail-codec-core = { git="https://github.com/1aim/mail-codec-core" }
+vec1 = { git="https://github.com/1aim/vec1" }
 
-[dependencies.tree_magic]
-version = "0.2.0"
-features = ["staticmime"]
+[dependencies.mime]
+git="https://github.com/1aim/mime"
+branch="parser_revamp"
+features=["expose-param-utils"]
+version="0.4.0"
 
-[dependencies.futures-cpupool]
-optional = true
-version = "0.1.5"
 
-[dependencies.soft-ascii-string]
-git = "https://github.com/1aim/soft-ascii-string"
-
-[dependencies.total-order-multi-map]
-path = "./total-order-multi-map"
-
-[dependencies.vec1]
-path = "./vec1"
-
-[dependencies.mail-codec-core]
-path = "./core"
-
-[dependencies.mail-codec-components]
-path = "./components"
 
 [dev-dependencies]
-serde_json = "1.0.2"
+chrono = "0.4.0"
+
 
 [features]
-debug_trace_tokens = []
-default = ["default_impl"]
-default_impl = ["default_impl_mail", "default_impl_compose"]
-default_impl_any = []
-default_impl_component_id = ["default_impl_any"]
-default_impl_compose = ["default_impl_name_composer", "default_impl_component_id"]
-default_impl_cpupool = ["futures-cpupool", "default_impl_any"]
-default_impl_fs = ["default_impl_any"]
-default_impl_mail = ["default_impl_cpupool", "default_impl_fs", "default_impl_vfs"]
-default_impl_name_composer = ["default_impl_any"]
-default_impl_vfs = ["default_impl_any"]
-traceing = [ "mail-codec-core/traceing", "mail-codec-components/traceing" ]
-
-[workspace]
-members = ["total-order-multi-map", "vec1", "core", "components"]
+traceing = [ "mail-codec-core/traceing" ]

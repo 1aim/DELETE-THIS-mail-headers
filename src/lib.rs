@@ -1,105 +1,59 @@
-#![recursion_limit="128"]
-
-#[cfg_attr(test, macro_use)]
-extern crate mail_codec_core;
-
 #[macro_use]
-extern crate log;
-extern crate mime;
-extern crate quoted_printable;
-extern crate idna;
-extern crate chrono;
-extern crate futures;
-extern crate serde;
-extern crate base64;
-extern crate rand;
-extern crate percent_encoding;
-extern crate soft_ascii_string;
-extern crate total_order_multi_map;
-extern crate tree_magic;
-
+extern crate mail_codec_core as core;
 #[cfg_attr(test, macro_use)]
 extern crate vec1;
+extern crate mime;
+extern crate soft_ascii_string;
+extern crate quoted_string;
+#[macro_use]
+extern crate nom;
+#[macro_use]
+extern crate quick_error;
+#[cfg(test)]
+extern crate chrono;
+
 
 #[macro_use]
-extern crate serde_derive;
+mod error;
+mod utils;
+mod email;
+pub use self::email::{ Email, Domain, LocalPart };
 
-#[macro_use]
-extern crate scoped_tls;
+mod mailbox;
+pub use self::mailbox::{Mailbox, NoDisplayName};
 
+mod mailbox_list;
+pub use self::mailbox_list::{MailboxList, OptMailboxList };
 
-#[cfg(feature="default_impl_cpupool")]
-extern crate futures_cpupool;
+mod unstructured;
+pub use self::unstructured::Unstructured;
 
+mod message_id;
+pub use self::message_id::{ MessageID, MessageIDList };
 
-#[macro_use]
-pub mod external;
-#[cfg_attr(test, macro_use)]
-pub mod codec;
-pub mod data;
-pub mod components;
-#[macro_use]
-pub mod headers;
-pub mod mail;
-pub mod composition;
+pub type ContentID = MessageID;
+pub type ContentIDList = MessageIDList;
 
-#[cfg(feature="default_impl_any")]
-pub mod default_impl;
+mod cfws;
+pub use self::cfws::{ CFWS, FWS };
 
-pub mod mail_builder_prelude {
-    pub type Encoder = ::codec::Encoder<::mail::Resource>;
-    pub use error::*;
-    pub use grammar::MailType;
-    pub use codec::{EncodableInHeader, Encodable, EncodeHandle};
-    pub use data::FromInput;
-    pub use headers::*;
-    pub use components::*;
-    pub use mail::Builder;
-    pub use mail::mime::MultipartMime;
-}
+mod media_type;
+pub use self::media_type::*;
 
+mod path;
+pub use self::path::Path;
 
-pub mod resource_prelude {
-    pub use utils::FileBuffer;
-    pub use utils::FileMeta;
-    pub use mail::{ Resource, ResourceSpec };
-    pub use composition::{ Embedding, Attachment, EmbeddingWithCID };
-}
+mod received_token;
+pub use self::received_token::ReceivedToken;
 
-pub mod composition_prelude {
-    pub type Encoder = ::codec::Encoder<::mail::Resource>;
-    pub use error::*;
-    pub use grammar::MailType;
-    pub use data::FromInput;
-    pub use components::{
-        Mailbox,
-        Email,
-        TransferEncoding
-    };
-    pub use codec::{
-        EncodableInHeader,
-        EncodeHandle,
-        Encodable
-    };
-    pub use composition::{
-        Compositor,
-        NameComposer,
-        MailSendContext,
-    };
-}
+pub mod word;
+pub use self::word::Word;
 
-pub mod template_engine_prelude {
-    pub type StdError = ::std::error::Error;
-    pub type StdResult<R,E> = ::std::result::Result<R,E>;
-    pub use serde::Serialize;
+mod phrase;
+pub use self::phrase::Phrase;
 
-    pub use vec1::Vec1;
-    pub use mail::{
-        Resource
-    };
-    pub use composition::{
-        Template, TemplateEngine,
-        Context,
-        Attachment, Embedding
-    };
- }
+mod phrase_list;
+pub use self::phrase_list::PhraseList;
+
+mod disposition;
+pub use self::disposition::*;
