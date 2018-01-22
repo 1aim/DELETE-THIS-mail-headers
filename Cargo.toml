@@ -1,9 +1,9 @@
 [package]
-name = "mail-codec-components"
+name = "mail-codec-headers"
 version = "0.0.1"
 authors = ["Philipp Korber <philippkorber@gmail.com>"]
 description = "TODO"
-documentation = "https://docs.rs/mail-codec-components"
+documentation = "https://docs.rs/mail-codec-headers"
 keywords = []
 categories = []
 license = "MIT OR Apache-2.0"
