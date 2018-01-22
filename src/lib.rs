@@ -12,6 +12,8 @@ extern crate nom;
 extern crate quick_error;
 extern crate chrono;
 
+#[cfg(all(not(feature="traceing"), test))]
+compile_error! { "testing needs feature `traceing` to be enabled" }
 
 #[macro_use]
 pub mod error;
