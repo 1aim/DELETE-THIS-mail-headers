@@ -75,4 +75,4 @@ RFC   | Name                      | Rust-Type         | Comment
 --
 --
 ------Not Standard Discouraged----
---ContentLength  |usize|   |do never generate content length header in a mail you send|
+--ContentLength  |usize|   |do never generate content length header in a mail you send, it's a HTTP think|

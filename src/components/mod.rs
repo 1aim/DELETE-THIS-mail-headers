@@ -1,6 +1,11 @@
 mod utils;
 
-//reexport components
+//reexport components from core
+//TODO check if they should be moved from core to this crate
+pub use core::utils::DateTime;
+pub use core::codec::transfer_encoding::TransferEncoding;
+
+//reexport our components
 mod email;
 pub use self::email::{ Email, Domain, LocalPart };
 

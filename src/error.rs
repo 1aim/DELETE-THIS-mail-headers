@@ -2,6 +2,32 @@ use mime::error::ParserError;
 
 quick_error! {
     #[derive(Debug)]
+    pub enum HeaderValidationError {
+        MultiMailboxFromWithoutSender {
+            description("From field contained multiple addresses but no Sender field was set")
+        }
+        ResentDateFieldMissing {
+            description("each resent block must have a resent-date field")
+        }
+        MultiMailboxResentFromWithoutResentSender {
+            description("Resent-From field in resent block without a Resent-Sender field")
+        }
+    }
+}
+
+
+macro_rules! bail_header {
+    ($ce:expr) => ({
+        use $crate::error::HeaderValidationError;
+        use $crate::core::error::{ErrorKind, ResultExt};
+        let err: HeaderValidationError = $ce;
+        return Err(err).chain_err(||ErrorKind::HeaderValidationFailure)
+    });
+}
+
+
+quick_error! {
+    #[derive(Debug)]
     pub enum ComponentError {
 
         WSPOnlyPhrase {
