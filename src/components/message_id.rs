@@ -4,7 +4,7 @@ use nom::IResult;
 use soft_ascii_string::SoftAsciiChar;
 use vec1::Vec1;
 
-use core::error::*;
+use core::error::Result;
 use core::codec::{EncodableInHeader, EncodeHandle};
 use core::data::{ Input, SimpleItem };
 use core::utils::{HeaderTryFrom, HeaderTryInto};

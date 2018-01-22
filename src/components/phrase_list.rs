@@ -1,6 +1,6 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::*;
+use core::error::Result;
 use core::codec::{EncodableInHeader, EncodeHandle};
 use vec1::Vec1;
 use core::utils::{ HeaderTryFrom, HeaderTryInto };

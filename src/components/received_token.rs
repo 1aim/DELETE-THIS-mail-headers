@@ -1,6 +1,6 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::*;
+use core::error::Result;
 use core::codec::{EncodableInHeader, EncodeHandle};
 use super::word::{ Word, do_encode_word };
 use super::{ Email, Domain };

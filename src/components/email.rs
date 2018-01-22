@@ -3,7 +3,7 @@ use soft_ascii_string::SoftAsciiChar;
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 use quoted_string::quote_if_needed;
 
-use core::error::*;
+use core::error::Result;
 use core::grammar::{
     is_ascii,
     is_atext,

@@ -1,4 +1,4 @@
-use core::error::*;
+use core::error::Result;
 use core::codec::{EncodableInHeader, EncodeHandle};
 
 //FEATURE_TODO(fws_controll): allow controlling the amount of WS and if a CRLF should be used in FWS

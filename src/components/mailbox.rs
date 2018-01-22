@@ -1,6 +1,6 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::*;
+use core::error::Result;
 use core::utils::{HeaderTryFrom, HeaderTryInto};
 use core::codec::{EncodableInHeader, EncodeHandle};
 
@@ -90,7 +90,7 @@ impl EncodableInHeader for  Mailbox {
 
 #[cfg(test)]
 mod test {
-    use ::{ Email, Phrase };
+    use components::{ Email, Phrase };
     use super::*;
 
     ec_test!{ email_only, {

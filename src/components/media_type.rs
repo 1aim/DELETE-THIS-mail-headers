@@ -5,7 +5,7 @@ use soft_ascii_string::{SoftAsciiStr,SoftAsciiChar};
 use mime::{MediaType as _MediaType, AnyMediaType};
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 
-use core::error::*;
+use core::error::Result;
 use core::utils::HeaderTryFrom;
 use core::codec::{EncodeHandle, EncodableInHeader};
 use error::ComponentError::{

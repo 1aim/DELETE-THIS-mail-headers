@@ -1,5 +1,5 @@
 use vec1::Vec1;
-use core::error::*;
+use core::error::{Result, Error};
 use core::grammar::encoded_word::EncodedWordContext;
 use core::codec::{EncodableInHeader, EncodeHandle};
 use core::utils::{HeaderTryFrom, HeaderTryInto};

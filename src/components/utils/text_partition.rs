@@ -1,4 +1,4 @@
-use core::error::*;
+use core::error::Result;
 use core::grammar::{is_vchar, is_ws, MailType };
 
 use error::ComponentError::NeedAtLastOneVCHAR;

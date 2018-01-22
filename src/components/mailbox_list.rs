@@ -2,7 +2,7 @@
 use vec1::Vec1;
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::*;
+use core::error::Result;
 use core::codec::{EncodableInHeader, EncodeHandle};
 use core::utils::{ HeaderTryFrom, HeaderTryInto};
 
@@ -245,7 +245,7 @@ deref0!{ +mut MailboxList => Vec1<Mailbox> }
 
 #[cfg(test)]
 mod test {
-    use ::{ Mailbox, Email, Phrase };
+    use components::{ Mailbox, Email, Phrase };
     use super::*;
 
 

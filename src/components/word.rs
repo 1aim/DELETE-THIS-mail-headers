@@ -1,7 +1,7 @@
 
 use quoted_string;
 
-use core::error::*;
+use core::error::Result;
 use core::codec::{
     EncodedWordEncoding,
     EncodableInHeader, EncodeHandle,

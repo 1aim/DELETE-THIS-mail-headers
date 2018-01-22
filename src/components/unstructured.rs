@@ -2,7 +2,7 @@ use std::ops::{ Deref, DerefMut};
 
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::*;
+use core::error::Result;
 use core::grammar::is_vchar;
 use core::codec::{EncodeHandle, EncodableInHeader, EncodedWordEncoding, WriterWrapper};
 use core::data::Input;
