@@ -147,15 +147,14 @@ deref0!{+mut DispositionParameters => FileMeta }
 
 #[cfg(test)]
 mod test {
+    use chrono;
     use std::default::Default;
 
     use super::*;
-    use core::utils::DateTime;
 
-    pub fn test_time( modif: u32 ) -> DateTime {
+    pub fn test_time( modif: u32 ) -> chrono::DateTime<chrono::Utc> {
         use chrono::prelude::*;
-        use self::DateTime as DT;
-        DT::new( FixedOffset::east( 3 * 3600 ).ymd( 2013, 8, 6 ).and_hms( 7, 11, modif ) )
+        Utc.ymd( 2013, 8, 6 ).and_hms( 7, 11, modif )
     }
 
     ec_test!{ no_params_inline, {
@@ -190,9 +189,9 @@ mod test {
     } => ascii => [
         Text concat!( "attachment",
             "; filename=random.png",
-            "; creation-date=\"Tue,  6 Aug 2013 04:11:01 +0000\"",
-            "; modification-date=\"Tue,  6 Aug 2013 04:11:02 +0000\"",
-            "; read-date=\"Tue,  6 Aug 2013 04:11:03 +0000\"",
+            "; creation-date=\"Tue,  6 Aug 2013 07:11:01 +0000\"",
+            "; modification-date=\"Tue,  6 Aug 2013 07:11:02 +0000\"",
+            "; read-date=\"Tue,  6 Aug 2013 07:11:03 +0000\"",
             "; size=4096" ),
     ]}
 

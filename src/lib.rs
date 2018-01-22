@@ -10,7 +10,6 @@ extern crate quoted_string;
 extern crate nom;
 #[macro_use]
 extern crate quick_error;
-#[cfg(test)]
 extern crate chrono;
 
 

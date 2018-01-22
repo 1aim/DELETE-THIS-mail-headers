@@ -16,6 +16,7 @@ soft-ascii-string = "0.2"
 quoted-string = { git="https://github.com/1aim/quoted-string", version="0.5" }
 mail-codec-core = { git="https://github.com/1aim/mail-codec-core" }
 vec1 = { git="https://github.com/1aim/vec1" }
+chrono = "0.4.0"
 
 [dependencies.mime]
 git="https://github.com/1aim/mime"
@@ -26,7 +27,6 @@ version="0.4.0"
 
 
 [dev-dependencies]
-chrono = "0.4.0"
 
 
 [features]
