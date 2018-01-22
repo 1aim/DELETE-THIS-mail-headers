@@ -9,36 +9,108 @@ use self::validators::{
 def_headers! {
     test_name: validate_header_names,
     scope: components,
-    //RFC 5322:
-    1 Date,                    unchecked { "Date"          },  DateTime,       None,
-    1 From,                    unchecked { "From"          },  MailboxList,    validator_from,
-    1 Sender,                  unchecked { "Sender"        },  Mailbox,        None,
-    1 ReplyTo,                 unchecked { "Reply-To"      },  MailboxList,    None,
-    1 To,                      unchecked { "To"            },  MailboxList,    None,
-    1 Cc,                      unchecked { "Cc"            },  MailboxList,    None,
-    1 Bcc,                     unchecked { "Bcc"           },  MailboxList,    None,
-    1 MessageId,               unchecked { "Message-Id"    },  MessageID,      None,
-    1 InReplyTo,               unchecked { "In-Reply-To"   },  MessageIDList,  None,
-    1 References,              unchecked { "References"    },  MessageIDList,  None,
-    1 Subject,                 unchecked { "Subject"       },  Unstructured,   None,
-    + Comments,                unchecked { "Comments"      },  Unstructured,   None,
-    + Keywords,                unchecked { "Keywords"      },  PhraseList,     None,
-    + ResentDate,              unchecked { "Resent-Date"   },  DateTime,       validator_resent_any,
-    + ResentFrom,              unchecked { "Resent-From"   },  MailboxList,    validator_resent_any,
-    + ResentSender,            unchecked { "Resent-Sender" },  Mailbox,        validator_resent_any,
-    + ResentTo,                unchecked { "Resent-To"     },  MailboxList,    validator_resent_any,
-    + ResentCc,                unchecked { "Resent-Cc"     },  MailboxList,    validator_resent_any,
-    + ResentBcc,               unchecked { "Resent-Bcc"    },  OptMailboxList, validator_resent_any,
-    + ResentMsgId,             unchecked { "Resent-Msg-Id" },  MessageID,      validator_resent_any,
-    + ReturnPath,              unchecked { "Return-Path"   },  Path,           None,
-    + Received,                unchecked { "Received"      },  ReceivedToken,  None,
-    //RFC 2045:
-    1 ContentType,             unchecked { "Content-Type"              }, MediaType,        None,
-    1 ContentId,               unchecked { "Content-Id"                }, ContentID,        None,
-    1 ContentTransferEncoding, unchecked { "Content-Transfer-Encoding" }, TransferEncoding, None,
-    1 ContentDescription,      unchecked { "Content-Description"       }, Unstructured,     None,
-    //RFC 2183:
-    1 ContentDisposition,      unchecked { "Content-Disposition"       }, Disposition, None
+    /// (rfc5322)
+    Date,            maxOne, unchecked { "Date"          },  DateTime,       None,
+    /// (rfc5322)
+    From,            maxOne, unchecked { "From"          },  MailboxList,    validator_from,
+    /// (rfc5322)
+    Sender,          maxOne, unchecked { "Sender"        },  Mailbox,        None,
+    /// (rfc5322)
+    ReplyTo,         maxOne, unchecked { "Reply-To"      },  MailboxList,    None,
+    /// (rfc5322)
+    To,              maxOne, unchecked { "To"            },  MailboxList,    None,
+    /// (rfc5322)
+    Cc,              maxOne, unchecked { "Cc"            },  MailboxList,    None,
+    /// (rfc5322)
+    Bcc,             maxOne, unchecked { "Bcc"           },  MailboxList,    None,
+    /// (rfc5322)
+    MessageId,       maxOne, unchecked { "Message-Id"    },  MessageID,      None,
+    /// (rfc5322)
+    InReplyTo,       maxOne, unchecked { "In-Reply-To"   },  MessageIDList,  None,
+    /// (rfc5322)
+    References,      maxOne, unchecked { "References"    },  MessageIDList,  None,
+    /// (rfc5322)
+    Subject,         maxOne, unchecked { "Subject"       },  Unstructured,   None,
+    /// (rfc5322)
+    Comments,     anyNumber, unchecked { "Comments"      },  Unstructured,   None,
+    /// (rfc5322)
+    Keywords,     anyNumber, unchecked { "Keywords"      },  PhraseList,     None,
+    /// (rfc5322)
+    ResentDate,   anyNumber, unchecked { "Resent-Date"   },  DateTime,       validator_resent_any,
+    /// (rfc5322)
+    ResentFrom,   anyNumber, unchecked { "Resent-From"   },  MailboxList,    validator_resent_any,
+    /// (rfc5322)
+    ResentSender, anyNumber, unchecked { "Resent-Sender" },  Mailbox,        validator_resent_any,
+    /// (rfc5322)
+    ResentTo,     anyNumber, unchecked { "Resent-To"     },  MailboxList,    validator_resent_any,
+    /// (rfc5322)
+    ResentCc,     anyNumber, unchecked { "Resent-Cc"     },  MailboxList,    validator_resent_any,
+    /// (rfc5322)
+    ResentBcc,    anyNumber, unchecked { "Resent-Bcc"    },  OptMailboxList, validator_resent_any,
+    /// (rfc5322)
+    ResentMsgId,  anyNumber, unchecked { "Resent-Msg-Id" },  MessageID,      validator_resent_any,
+    /// (rfc5322)
+    ReturnPath,   anyNumber, unchecked { "Return-Path"   },  Path,           None,
+    /// (rfc5322)
+    Received,     anyNumber, unchecked { "Received"      },  ReceivedToken,  None,
+
+    /// (rfc2045)
+    ContentType,     maxOne, unchecked { "Content-Type"              }, MediaType,        None,
+
+    /// (rfc2045)
+    ContentId,       maxOne, unchecked { "Content-Id"                }, ContentID,        None,
+
+    /// The transfer encoding used to (transfer) encode the body (rfc2045)
+    ///
+    /// This should either be:
+    ///
+    /// - `7bit`: Us-ascii only text, default value if header filed is not present
+    /// - `quoted-printable`: Data encoded with quoted-printable encoding).
+    /// - `base64`: Data encoded with base64 encoding.
+    ///
+    /// Through other defined values include:
+    ///
+    /// - `8bit`: Data which is not encoded but still considers lines and line length,
+    ///           i.e. has no more then 998 bytes between two CRLF (or the start/end of data).
+    ///           Bodies of this kind can still be send if the server supports the 8bit
+    ///           mime extension.
+    ///
+    /// - `binary`: Data which is not encoded and can be any kind of arbitrary binary data.
+    ///             To send binary bodies the `CHUNKING` smpt extension (rfc3030) needs to be
+    ///             supported using BDATA instead of DATA to send the content. Note that the
+    ///             extension does not fix the potential but rare problem of accendentall
+    ///             multipart boundary collisions.
+    ///
+    ///
+    /// Nevertheless this encodings are mainly meant to be used for defining the
+    /// domain of data in a system before it is encoded.
+    ContentTransferEncoding, maxOne, unchecked { "Content-Transfer-Encoding" }, TransferEncoding, None,
+
+    /// A description of the content of the body (rfc2045)
+    ///
+    /// This is mainly usefull for multipart body parts, e.g.
+    /// to add an description to a inlined/attached image.
+    ContentDescription,      maxOne, unchecked { "Content-Description"       }, Unstructured,     None,
+
+    /// Defines the disposition of a multipart part it is used on (rfc2183)
+    ///
+    /// This is meant to be used as a header for a multipart body part, which
+    /// was created from a resource, mainly a file.
+    ///
+    /// Examples are attachments like images, etc.
+    ///
+    /// Possible Dispositions are:
+    /// - Inline
+    /// - Attachment
+    ///
+    /// Additional it is used to provide following information as parameters:
+    /// - `filename`: the file name associated with the resource this body is based on
+    /// - `creation-date`: when the resource this body is based on was created
+    /// - `modification-date`: when the resource this body is based on was last modified
+    /// - `read-date`: when the resource this body is based on was read (to create the body)
+    /// - `size`: the size this resource should have, note that `Content-Size` is NOT a mail
+    ///           related header but specific to http.
+    ContentDisposition, maxOne, unchecked { "Content-Disposition"       }, Disposition, None
 }
 
 mod validators {
