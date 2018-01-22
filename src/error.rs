@@ -72,10 +72,10 @@ quick_error! {
             display("expected a valid MessageId, got: {:?}", got)
         }
 
-//        InvalidMime(got: String) {
-//            description("mime can be parsed by mime crate but is still invalid")
-//            display("expected valid mime type, got: {:?}", got)
-//        }
+        InvalidMediaTypeParts(error: ParserError) {
+            description("constructing media type failed")
+            display("constructing media type failed: {:?}", error)
+        }
 
 //        InvalidMimeRq(got: String) {
 //            description(concat!(

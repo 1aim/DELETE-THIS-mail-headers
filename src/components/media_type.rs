@@ -10,16 +10,41 @@ use core::utils::HeaderTryFrom;
 use core::codec::{EncodeHandle, EncodableInHeader};
 use error::ComponentError::{
     ParsingMediaTypeFailed,
-    //InvalidMime,
-    //MimeSectionOverflow, InvalidMimeRq
+    InvalidMediaTypeParts,
 };
 
 
 #[derive(Debug, Clone)]
 pub struct MediaType {
-    media_type: AnyMediaType,
+    media_type: InternationalizedMediaType,
     might_need_utf8: bool
 }
+
+impl MediaType {
+
+    pub fn new<T, ST>(type_: T, subtype: ST) -> Self
+        where T: AsRef<str>, ST: AsRef<str>
+    {
+        let media_type = <_MediaType<MimeSpec<Ascii, Modern>>>
+            ::new(type_, subtype)
+            .unwrap().into();
+
+        MediaType { media_type, might_need_utf8: false }
+    }
+
+    pub fn new_with_params<T, ST, I, IV, IN>(type_: T, subtype: ST, params: I) -> Result<Self>
+        where T: AsRef<str>, ST: AsRef<str>,
+              I: IntoIterator<Item=(IV, IN)>,
+              IV: AsRef<str>, IN: AsRef<str>
+    {
+        let media_type = <_MediaType<MimeSpec<Internationalized, Modern>>>
+            ::new_with_params(type_, subtype, params)
+            .map_err(|e| error!(InvalidMediaTypeParts(e)))?.into();
+
+        Ok(MediaType { media_type, might_need_utf8: false })
+    }
+}
+
 
 impl Deref for MediaType {
     type Target = AnyMediaType;
@@ -34,9 +59,8 @@ type InternationalizedMediaType = _MediaType<MimeSpec<Internationalized, Modern>
 
 impl From<AsciiMediaType> for MediaType {
     fn from(media_type: AsciiMediaType) -> Self {
-        let anyfied: AnyMediaType = media_type.into();
         MediaType {
-            media_type: anyfied,
+            media_type: media_type.into(),
             might_need_utf8: false
         }
     }
@@ -44,11 +68,22 @@ impl From<AsciiMediaType> for MediaType {
 
 impl From<InternationalizedMediaType> for MediaType {
     fn from(media_type: InternationalizedMediaType) -> Self{
-        let anyfied: AnyMediaType = media_type.into();
         MediaType {
-            media_type: anyfied,
+            media_type: media_type.into(),
             might_need_utf8: true
         }
+    }
+}
+
+impl Into<AnyMediaType> for MediaType {
+    fn into(self) -> AnyMediaType {
+        self.media_type.into()
+    }
+}
+
+impl Into<InternationalizedMediaType> for MediaType {
+    fn into(self) -> InternationalizedMediaType {
+        self.media_type
     }
 }
 
