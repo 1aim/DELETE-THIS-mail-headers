@@ -1,9 +1,5 @@
 mod utils;
 
-//reexport components from core
-//TODO check if they should be moved from core to this crate
-pub use core::codec::transfer_encoding::TransferEncoding;
-
 //reexport our components
 mod date_time;
 pub use self::date_time::DateTime;
@@ -16,6 +12,9 @@ pub use self::mailbox::{Mailbox, NoDisplayName};
 
 mod mailbox_list;
 pub use self::mailbox_list::{MailboxList, OptMailboxList };
+
+mod transfer_encoding;
+pub use self::transfer_encoding::TransferEncoding;
 
 mod unstructured;
 pub use self::unstructured::Unstructured;
