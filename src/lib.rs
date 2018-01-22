@@ -19,3 +19,4 @@ compile_error! { "testing needs feature `traceing` to be enabled" }
 pub mod error;
 pub mod components;
 pub mod headers;
+pub use self::headers::*;
