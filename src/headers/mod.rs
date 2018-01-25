@@ -118,7 +118,7 @@ mod validators {
 
     use core::error::Result;
     use core::codec::EncodableInHeader;
-    use core::headers::{ HeaderMap, Header, HeaderName };
+    use core::header::{ HeaderMap, Header, HeaderName };
 
     use error::HeaderValidationError::{
         MultiMailboxFromWithoutSender,
@@ -190,7 +190,7 @@ mod validators {
 
 #[cfg(test)]
 mod test {
-    use core::headers::HeaderMap;
+    use core::header::HeaderMap;
     use components::DateTime;
     use headers::{
         From, ResentFrom, ResentTo, ResentDate,
