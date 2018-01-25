@@ -1,5 +1,4 @@
 use std::ops::Deref;
-
 use soft_ascii_string::{SoftAsciiStr,SoftAsciiChar};
 
 use mime::{MediaType as _MediaType, AnyMediaType};
@@ -22,15 +21,22 @@ pub struct MediaType {
 
 impl MediaType {
 
+    pub fn parse(media_type: &str) -> Result<Self> {
+        let media_type = InternationalizedMediaType
+            ::parse(media_type)
+            .map_err(|e| error!(ParsingMediaTypeFailed(e.to_owned())))?;
+
+        Ok(media_type.into())
+    }
+
     pub fn new<T, ST>(type_: T, subtype: ST) -> Result<Self>
         where T: AsRef<str>, ST: AsRef<str>
     {
-        let media_type = <_MediaType<MimeSpec<Ascii, Modern>>>
+        let media_type = AsciiMediaType
             ::new(type_, subtype)
-            .map_err(|e| error!(InvalidMediaTypeParts(e)))?
-            .into();
+            .map_err(|e| error!(InvalidMediaTypeParts(e)))?;
 
-        Ok(MediaType { media_type, might_need_utf8: false })
+        Ok(media_type.into())
     }
 
     pub fn new_with_params<T, ST, I, IV, IN>(type_: T, subtype: ST, params: I) -> Result<Self>
@@ -38,11 +44,11 @@ impl MediaType {
               I: IntoIterator<Item=(IV, IN)>,
               IV: AsRef<str>, IN: AsRef<str>
     {
-        let media_type = <_MediaType<MimeSpec<Internationalized, Modern>>>
+        let media_type = InternationalizedMediaType
             ::new_with_params(type_, subtype, params)
-            .map_err(|e| error!(InvalidMediaTypeParts(e)))?.into();
+            .map_err(|e| error!(InvalidMediaTypeParts(e)))?;
 
-        Ok(MediaType { media_type, might_need_utf8: false })
+        Ok(media_type.into())
     }
 }
 
@@ -70,7 +76,7 @@ impl From<AsciiMediaType> for MediaType {
 impl From<InternationalizedMediaType> for MediaType {
     fn from(media_type: InternationalizedMediaType) -> Self{
         MediaType {
-            media_type: media_type.into(),
+            media_type: media_type,
             might_need_utf8: true
         }
     }
@@ -102,10 +108,7 @@ impl HeaderTryFrom<InternationalizedMediaType> for MediaType {
 
 impl<'a> HeaderTryFrom<&'a str> for MediaType {
     fn try_from(media_type: &'a str) -> Result<Self> {
-        match InternationalizedMediaType::parse(media_type) {
-            Ok(media_type) => Ok(media_type.into()),
-            Err(err) => bail!(ParsingMediaTypeFailed(err.to_owned()))
-        }
+        Self::parse(media_type)
     }
 }
 
