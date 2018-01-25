@@ -22,14 +22,15 @@ pub struct MediaType {
 
 impl MediaType {
 
-    pub fn new<T, ST>(type_: T, subtype: ST) -> Self
+    pub fn new<T, ST>(type_: T, subtype: ST) -> Result<Self>
         where T: AsRef<str>, ST: AsRef<str>
     {
         let media_type = <_MediaType<MimeSpec<Ascii, Modern>>>
             ::new(type_, subtype)
-            .unwrap().into();
+            .map_err(|e| error!(InvalidMediaTypeParts(e)))?
+            .into();
 
-        MediaType { media_type, might_need_utf8: false }
+        Ok(MediaType { media_type, might_need_utf8: false })
     }
 
     pub fn new_with_params<T, ST, I, IV, IN>(type_: T, subtype: ST, params: I) -> Result<Self>
