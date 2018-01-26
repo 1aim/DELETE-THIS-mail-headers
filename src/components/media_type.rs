@@ -1,7 +1,8 @@
 use std::ops::Deref;
 use soft_ascii_string::{SoftAsciiStr,SoftAsciiChar};
 
-use mime::{MediaType as _MediaType, AnyMediaType};
+
+use mime::{MediaType as _MediaType, Name, AnyMediaType};
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 
 use core::error::Result;
@@ -49,6 +50,18 @@ impl MediaType {
             .map_err(|e| error!(InvalidMediaTypeParts(e)))?;
 
         Ok(media_type.into())
+    }
+
+    pub fn remove_param<N>(&mut self, name: N) -> bool
+        where N: for<'a> PartialEq<Name<'a>>
+    {
+        self.media_type.remove_param(name)
+    }
+
+    pub fn set_param<N, V>(&mut self, name: N, value: V)
+        where N: AsRef<str>, V: AsRef<str>
+    {
+        self.media_type.set_param(name, value)
     }
 }
 
