@@ -1,4 +1,4 @@
-use mime::error::ParserError;
+use mime::error::{Error as ParserError};
 
 quick_error! {
     #[derive(Debug)]
