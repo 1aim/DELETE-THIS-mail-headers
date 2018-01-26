@@ -16,6 +16,9 @@ extern crate chrono;
 compile_error! { "testing needs feature `traceing` to be enabled" }
 
 #[macro_use]
+mod macros;
+
+#[macro_use]
 pub mod error;
 pub mod components;
 pub mod headers;
