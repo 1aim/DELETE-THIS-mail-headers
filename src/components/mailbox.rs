@@ -15,6 +15,18 @@ pub struct Mailbox {
     pub email: Email
 }
 
+impl Mailbox {
+
+    pub fn with_default_name<F>(mut self, default_fn: F) -> Result<Mailbox>
+        where F: FnOnce(&Email) -> Result<Option<Phrase>>
+    {
+        if self.display_name.is_none() {
+            let default_name = default_fn(&self.email)?;
+            self.display_name = default_name;
+        }
+        Ok(self)
+    }
+}
 
 impl From<Email> for Mailbox {
 
@@ -128,5 +140,59 @@ mod test {
         MarkFWS,
         Text ">"
     ]}
+
+
+    mod with_default_name {
+        use super::*;
+
+        #[test]
+        fn does_nothing_if_display_name_is_set() {
+            let mailbox = Mailbox {
+                display_name: Some( Phrase::try_from( "ay ya" ).unwrap() ),
+                email: Email::try_from( "ab@cd" ).unwrap(),
+            };
+            let mailbox2 = mailbox.clone();
+            let mailbox = mailbox.with_default_name(|_| Ok(None)).unwrap();
+            assert_eq!(mailbox, mailbox2);
+        }
+
+        #[test]
+        fn generates_a_display_name_if_needed() {
+            let mailbox = Mailbox {
+                display_name: None,
+                email: Email::try_from( "ab@cd" ).unwrap(),
+            };
+            let mailbox = mailbox.with_default_name(|email| {
+                assert_eq!(email, &Email::try_from( "ab@cd" ).unwrap());
+                Ok(Some(Phrase::try_from( "ay ya" )?))
+            }).unwrap();
+
+            assert_eq!(mailbox, Mailbox {
+                display_name: Some( Phrase::try_from( "ay ya" ).unwrap() ),
+                email: Email::try_from( "ab@cd" ).unwrap(),
+            });
+        }
+
+        #[test]
+        fn can_decide_to_not_generate_a_name() {
+            let mailbox = Mailbox {
+                display_name: None,
+                email: Email::try_from( "ab@cd" ).unwrap(),
+            };
+            let new_mailbox = mailbox.clone().with_default_name(|_| Ok(None)).unwrap();
+            assert_eq!(mailbox, new_mailbox);
+        }
+
+        #[test]
+        fn forward_errors() {
+            let mailbox = Mailbox {
+                display_name: None,
+                email: Email::try_from( "ab@cd" ).unwrap(),
+            };
+            let result = mailbox.clone().with_default_name(|_| Err("ups".into()));
+            let err = assert_err!(result);
+            assert_eq!(err.to_string(), "ups");
+        }
+    }
 }
 
