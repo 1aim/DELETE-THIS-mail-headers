@@ -13,6 +13,15 @@ use super::Phrase;
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct PhraseList(pub Vec1<Phrase>);
 
+impl IntoIterator for PhraseList {
+    type Item = <Vec1<Phrase> as IntoIterator>::Item;
+    type IntoIter = <Vec1<Phrase> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 
 impl EncodableInHeader for  PhraseList {
 

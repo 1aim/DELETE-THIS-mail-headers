@@ -1,4 +1,4 @@
-
+use std::iter::IntoIterator;
 use vec1::Vec1;
 use soft_ascii_string::SoftAsciiChar;
 
@@ -18,6 +18,15 @@ pub struct MailboxList( pub Vec1<Mailbox> );
 impl MailboxList {
     pub fn from_single( m: Mailbox ) -> Self {
         MailboxList( Vec1::new( m ) )
+    }
+}
+
+impl IntoIterator for MailboxList {
+    type Item = <Vec1<Mailbox> as IntoIterator>::Item;
+    type IntoIter = <Vec1<Mailbox> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 
