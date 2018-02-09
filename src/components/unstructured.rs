@@ -8,7 +8,7 @@ use core::codec::{EncodeHandle, EncodableInHeader, EncodedWordEncoding, WriterWr
 use core::data::Input;
 use core::utils::{HeaderTryInto, HeaderTryFrom};
 
-use error::ComponentError::WSPOnlyPhrase;
+use error::ComponentError::EmptyPhrase;
 
 use super::utils::text_partition::{partition, Partition};
 
@@ -100,7 +100,7 @@ impl EncodableInHeader for  Unstructured {
         if had_word {
             Ok( () )
         } else {
-            bail!(WSPOnlyPhrase);
+            bail!(EmptyPhrase);
         }
 
     }

@@ -30,10 +30,6 @@ quick_error! {
     #[derive(Debug)]
     pub enum ComponentError {
 
-        WSPOnlyPhrase {
-            description(
-                "can not encode WSP only phrase a phrase is required to contain at last one VCHAR")
-        }
 
 //        InvalidToken(got: String) {
 //            description("given input was not a valid token (syntax)")
@@ -93,6 +89,10 @@ quick_error! {
 
         PhraseListSize0 {
             description("a phrase list consist of at last one phrase, not 0")
+        }
+
+        EmptyPhrase {
+            description("a phrase consist of at last one word, neither empty nor only wsp are allowed")
         }
 
         NeedAtLastOneVCHAR(got: String) {

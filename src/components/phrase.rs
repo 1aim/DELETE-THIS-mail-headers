@@ -1,10 +1,11 @@
 use vec1::Vec1;
-use core::error::{Result, Error};
+use core::error::Result;
 use core::grammar::encoded_word::EncodedWordContext;
 use core::codec::{EncodableInHeader, EncodeHandle};
 use core::utils::{HeaderTryFrom, HeaderTryInto};
 use core::data::Input;
 
+use error::ComponentError::EmptyPhrase;
 use super::utils::text_partition::{ Partition, partition };
 use super::word::{ Word, do_encode_word };
 use super::{ CFWS, FWS };
@@ -41,7 +42,7 @@ impl Phrase {
         }
 
         let mut words = Vec1::from_vec( words )
-            .map_err( |_|-> Error { "a phras has to have at last one word".into() } )?;
+            .map_err( |_| error!(EmptyPhrase))?;
 
         if let Some( right_padding ) = last_gap {
             words.last_mut().pad_right( right_padding );
