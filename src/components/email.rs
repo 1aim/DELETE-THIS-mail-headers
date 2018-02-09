@@ -9,8 +9,8 @@ use core::grammar::{
     is_atext,
     is_dtext,
     is_ws,
-    MailType
 };
+use core::MailType;
 use core::codec::{EncodeHandle, EncodableInHeader };
 use core::codec::idna;
 use core::utils::{HeaderTryInto, HeaderTryFrom};

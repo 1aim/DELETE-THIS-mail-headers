@@ -78,7 +78,7 @@ impl EncodableInHeader for  MessageIDList {
 
 #[cfg(test)]
 mod test {
-    use core::grammar::MailType;
+    use core::MailType;
     use core::codec::{ Encoder, VecBodyBuf };
     use super::*;
 
@@ -130,7 +130,8 @@ mod test {
 
 mod parser_parts {
     use nom::IResult;
-    use core::grammar::{is_atext, is_dtext, MailType };
+    use core::grammar::{is_atext, is_dtext};
+    use core::MailType;
 
     pub fn parse_message_id( input: &str) -> IResult<&str, (&str, &str)> {
         do_parse!( input,

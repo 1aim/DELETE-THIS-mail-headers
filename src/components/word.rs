@@ -119,7 +119,7 @@ pub fn do_encode_word<'a,'b: 'a>(
 mod test {
     use std::mem;
 
-    use core::grammar::MailType;
+    use core::MailType;
     use core::codec::{ Encoder, VecBodyBuf, EncodableClosure};
     use core::codec::TraceToken::*;
     use core::codec::simplify_trace_tokens;

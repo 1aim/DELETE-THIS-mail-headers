@@ -109,7 +109,7 @@ impl EncodableInHeader for  Unstructured {
 
 #[cfg(test)]
 mod test {
-    use core::grammar::MailType;
+    use core::MailType;
     use core::codec::{Encoder, VecBodyBuf};
 
     use super::*;

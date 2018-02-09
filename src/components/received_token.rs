@@ -39,7 +39,7 @@ impl EncodableInHeader for  ReceivedToken {
 #[cfg(test)]
 mod test {
     use core::utils::HeaderTryFrom;
-    use core::grammar::MailType;
+    use core::MailType;
     use core::codec::{Encoder, VecBodyBuf};
     use super::*;
 
