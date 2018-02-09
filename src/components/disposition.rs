@@ -195,6 +195,14 @@ mod test {
             "; size=4096" ),
     ]}
 
+    ec_test!{ inline_file_name_param, {
+        Disposition::new(DispositionKind::Inline, FileMeta {
+            file_name: Some("logo.png".to_owned()),
+            ..Default::default()
+        })
+    } => ascii => [
+        Text "inline; filename=logo.png"
+    ]}
     //TODO: (1 allow FWS or so in parameters) (2 utf8 file names)
 
     #[test]
