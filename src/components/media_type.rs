@@ -138,8 +138,8 @@ impl EncodableInHeader for  MediaType {
         for (name, value) in self.params() {
             //FIXME for now do not split params at all
             handle.mark_fws_pos();
-            handle.write_str(SoftAsciiStr::from_str_unchecked("; "))?;
-            handle.mark_fws_pos();
+            handle.write_char(SoftAsciiChar::from_char_unchecked(';'))?;
+            handle.write_fws();
             //names are always ascii
             handle.write_str(SoftAsciiStr::from_str_unchecked(name.as_ref()))?;
 
@@ -335,9 +335,9 @@ mod test {
     } => ascii => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "arbitrary*=utf8''this%20is%it"
+        Text " arbitrary*=utf8''this%20is%it"
     ]}
 
     ec_test!{ writing_normal, {
@@ -345,9 +345,9 @@ mod test {
     } => ascii => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a=abc"
+        Text " a=abc"
     ]}
 
     ec_test!{ writing_needless_quoted, {
@@ -355,9 +355,9 @@ mod test {
     } => ascii => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a=\"abc\""
+        Text " a=\"abc\""
     ]}
 
     ec_test!{ writing_quoted, {
@@ -365,9 +365,9 @@ mod test {
     } => ascii => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a=\"abc def\""
+        Text " a=\"abc def\""
     ]}
 
     ec_test!{ writing_quoted_with_escape, {
@@ -375,9 +375,9 @@ mod test {
     } => ascii => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a=\"abc\\ def\""
+        Text " a=\"abc\\ def\""
     ]}
 
     ec_test!{ writing_quoted_utf8, {
@@ -385,9 +385,9 @@ mod test {
     } => utf8 => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a=\"←→\""
+        Text " a=\"←→\""
     ]}
 
     ec_test!{ #[ignore] writing_quoted_needed_encoding, {
@@ -395,9 +395,9 @@ mod test {
     } => ascii => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a*=utf8\'\'%E2%86%90%E2%86%92"
+        Text " a*=utf8\'\'%E2%86%90%E2%86%92"
     ]}
 
     ec_test!{ writing_parts_simple, {
@@ -405,13 +405,13 @@ mod test {
     } => ascii => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a*0=abc",
+        Text " a*0=abc",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a*1=\" def\""
+        Text " a*1=\" def\""
     ]}
 
     //TODO media type needs parts awareness
@@ -422,13 +422,13 @@ mod test {
     } => ascii => [
         Text "text/plain",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a*0*=utf8''abc",
+        Text " a*0*=utf8''abc",
         MarkFWS,
-        Text "; ",
+        Text ";",
         MarkFWS,
-        Text "a*1*=%E2%86%93"
+        Text " a*1*=%E2%86%93"
     ]}
 
 
