@@ -4,14 +4,13 @@ use core::error::Result;
 use core::codec::{ EncodeHandle, EncodableInHeader};
 
 /// The TransferEnecoding header component mainly used by the ContentTransferEncodingHeader.
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TransferEncoding {
     _7Bit,
     _8Bit,
     Binary,
     QuotedPrintable,
-    Base64,
-    //MAYBE_TODO add support for custom not standard transfer encodings (if anyone actually needs it)
+    Base64
 }
 
 impl TransferEncoding {
