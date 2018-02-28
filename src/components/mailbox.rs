@@ -17,13 +17,20 @@ pub struct Mailbox {
 
 impl Mailbox {
 
-    pub fn with_default_name<F>(mut self, default_fn: F) -> Result<Mailbox>
+    pub fn auto_gen_name<F>(&mut self, default_fn: F) -> Result<()>
         where F: FnOnce(&Email) -> Result<Option<Phrase>>
     {
         if self.display_name.is_none() {
             let default_name = default_fn(&self.email)?;
             self.display_name = default_name;
         }
+        Ok(())
+    }
+
+    pub fn with_default_name<F>(mut self, default_fn: F) -> Result<Mailbox>
+        where F: FnOnce(&Email) -> Result<Option<Phrase>>
+    {
+        self.auto_gen_name(default_fn)?;
         Ok(self)
     }
 }
