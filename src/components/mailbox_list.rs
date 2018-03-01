@@ -10,9 +10,10 @@ use error::ComponentError::MailboxListSize0;
 
 use super::Mailbox;
 
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub struct OptMailboxList( pub Vec<Mailbox> );
-#[derive(Debug)]
+
+#[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub struct MailboxList( pub Vec1<Mailbox> );
 
 impl MailboxList {
