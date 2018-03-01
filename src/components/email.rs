@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use soft_ascii_string::SoftAsciiChar;
 
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
@@ -31,7 +33,6 @@ pub struct Email {
 
 #[derive(Debug,  Clone, Hash, PartialEq, Eq)]
 pub struct LocalPart( Input );
-
 
 #[derive(Debug,  Clone, Hash, PartialEq, Eq)]
 pub struct Domain( SimpleItem );
@@ -122,6 +123,14 @@ impl EncodableInHeader for LocalPart {
     }
 }
 
+impl Deref for LocalPart {
+    type Target = Input;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 
 
 impl<T> HeaderTryFrom<T> for Domain
@@ -204,7 +213,13 @@ impl EncodableInHeader for  Domain {
     }
 }
 
+impl Deref for Domain {
+    type Target = SimpleItem;
 
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 
 
@@ -298,4 +313,15 @@ mod test {
         MarkFWS
     ]}
 
+    #[test]
+    fn local_part_as_str() {
+        let lp = LocalPart::try_from("hello").unwrap();
+        assert_eq!(lp.as_str(), "hello")
+    }
+
+    #[test]
+    fn domain_as_str() {
+        let domain = Domain::try_from("hello").unwrap();
+        assert_eq!(domain.as_str(), "hello")
+    }
 }
