@@ -38,6 +38,10 @@ impl EncodableInHeader for  OptMailboxList {
     fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
        encode_list( self.0.iter(), handle )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 //impl HeaderTryFrom<Mailbox> for OptMailboxList {
@@ -234,6 +238,10 @@ impl EncodableInHeader for  MailboxList {
 
     fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
         encode_list( self.0.iter(), handle )
+    }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
     }
 }
 

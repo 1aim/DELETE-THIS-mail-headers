@@ -120,16 +120,17 @@ mod test {
     use std::mem;
 
     use core::MailType;
-    use core::codec::{ Encoder, VecBodyBuf, EncodableClosure};
+    use core::codec::{ Encoder, VecBodyBuf};
     use core::codec::TraceToken::*;
     use core::codec::simplify_trace_tokens;
 
     use super::*;
     use super::super::FWS;
 
+
     ec_test!{encode_pseudo_encoded_words, {
         let word = Word::try_from( "=?" )?;
-        EncodableClosure(move |handle: &mut EncodeHandle| {
+        enc_closure!(move |handle: &mut EncodeHandle| {
             do_encode_word( &word, handle, Some( EncodedWordContext::Text ) )
         })
     } => ascii => [
@@ -138,7 +139,7 @@ mod test {
 
     ec_test!{encode_word, {
         let word = Word::try_from( "a↑b" )?;
-        EncodableClosure(move |handle: &mut EncodeHandle| {
+        enc_closure!(move |handle: &mut EncodeHandle| {
             do_encode_word( &word, handle, Some( EncodedWordContext::Text ) )
         })
     } => ascii => [
@@ -158,7 +159,7 @@ mod test {
 
     ec_test!{quoted_fallback, {
         let word = Word::try_from( "a\"b" )?;
-        EncodableClosure(move |handle: &mut EncodeHandle| {
+        enc_closure!(move |handle: &mut EncodeHandle| {
             do_encode_word( &word, handle, None )
         })
     } => ascii => [

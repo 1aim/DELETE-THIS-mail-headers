@@ -122,6 +122,10 @@ impl EncodableInHeader for DispositionParameters {
 
         Ok(())
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 
@@ -139,6 +143,10 @@ impl EncodableInHeader for Disposition {
         }
         self.file_meta.encode( handle )?;
         Ok( () )
+    }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
     }
 }
 

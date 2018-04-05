@@ -36,6 +36,10 @@ impl EncodableInHeader for DateTime {
         handle.write_str( &*time )?;
         Ok( () )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 impl<TZ> HeaderTryFrom<chrono::DateTime<TZ>> for DateTime

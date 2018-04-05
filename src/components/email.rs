@@ -87,6 +87,9 @@ impl EncodableInHeader for  Email {
         Ok( () )
     }
 
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 impl<T> HeaderTryFrom<T> for LocalPart
@@ -120,6 +123,10 @@ impl EncodableInHeader for LocalPart {
         handle.write_str_unchecked(&*res)?;
         handle.mark_fws_pos();
         Ok( () )
+    }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
     }
 }
 
@@ -210,6 +217,10 @@ impl EncodableInHeader for  Domain {
         }
         handle.mark_fws_pos();
         Ok( () )
+    }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
     }
 }
 

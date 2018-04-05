@@ -33,6 +33,10 @@ impl EncodableInHeader for  TransferEncoding {
         handle.write_str( self.repr() )?;
         Ok( () )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 

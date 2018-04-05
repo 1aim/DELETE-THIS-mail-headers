@@ -104,6 +104,10 @@ impl EncodableInHeader for  Mailbox {
         handle.write_char( SoftAsciiChar::from_char_unchecked('>') )?;
         Ok( () )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 

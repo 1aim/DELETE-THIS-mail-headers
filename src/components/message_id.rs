@@ -56,9 +56,13 @@ impl EncodableInHeader for  MessageID {
         handle.mark_fws_pos();
         Ok( () )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MessageIDList( pub Vec1<MessageID> );
 
 deref0!{ +mut MessageIDList => Vec1<MessageID> }
@@ -70,6 +74,10 @@ impl EncodableInHeader for  MessageIDList {
             msg_id.encode( handle )?;
         }
         Ok( () )
+    }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
     }
 }
 

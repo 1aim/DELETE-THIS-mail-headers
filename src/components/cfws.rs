@@ -42,6 +42,10 @@ impl EncodableInHeader for CFWS {
         }
         Ok( () )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 #[cfg(test)]

@@ -104,6 +104,10 @@ impl EncodableInHeader for  Unstructured {
         }
 
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 

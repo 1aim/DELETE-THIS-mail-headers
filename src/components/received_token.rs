@@ -34,6 +34,10 @@ impl EncodableInHeader for  ReceivedToken {
         }
         Ok( () )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 #[cfg(test)]

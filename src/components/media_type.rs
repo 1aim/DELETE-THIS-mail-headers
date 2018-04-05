@@ -158,6 +158,10 @@ impl EncodableInHeader for  MediaType {
         }
         Ok(())
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 //

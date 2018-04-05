@@ -41,6 +41,10 @@ impl EncodableInHeader for  PhraseList {
 
         Ok( () )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 
 impl<T> HeaderTryFrom<T> for PhraseList

@@ -35,6 +35,10 @@ impl EncodableInHeader for  Path {
         handle.mark_fws_pos();
         Ok( () )
     }
+
+    fn boxed_clone(&self) -> Box<EncodableInHeader> {
+        Box::new(self.clone())
+    }
 }
 //NOTE for parsing we have to make sure to _require_ '<>' around the email
 
