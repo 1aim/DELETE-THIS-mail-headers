@@ -1,5 +1,5 @@
 
-# mail-codec-headers &emsp; [![Build Status](https://travis-ci.org/1aim/mail_codec.svg?branch=master)](https://travis-ci.org/1aim/mail_codec)
+# mail-headers &emsp; [![Build Status](https://travis-ci.org/1aim/mail_headers.svg?branch=master)](https://travis-ci.org/1aim/mail_headers)
 
 **TODO**
 
@@ -8,7 +8,7 @@
 TODO
 
 
-Documentation can be [viewed on docs.rs](https://docs.rs/mail-codec-headers).
+Documentation can be [viewed on docs.rs](https://docs.rs/mail-headers).
 
 
 ## License

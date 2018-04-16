@@ -1,5 +1,5 @@
 #[macro_use]
-extern crate mail_codec_core as core;
+extern crate mail_common as core;
 
 #[cfg_attr(test, macro_use)]
 extern crate vec1;

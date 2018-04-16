@@ -1,9 +1,9 @@
 [package]
-name = "mail-codec-headers"
+name = "mail-headers"
 version = "0.0.1"
 authors = ["Philipp Korber <philippkorber@gmail.com>"]
 description = "TODO"
-documentation = "https://docs.rs/mail-codec-headers"
+documentation = "https://docs.rs/mail-headers"
 keywords = []
 categories = []
 license = "MIT OR Apache-2.0"
@@ -14,7 +14,7 @@ nom = "3.1.0"
 quick-error = "1.2.1"
 soft-ascii-string = "0.2"
 quoted-string = { git="https://github.com/1aim/quoted-string", version="0.5" }
-mail-codec-core = { git="https://github.com/1aim/mail-codec-core" }
+mail-common = { git="https://github.com/1aim/mail-common" }
 vec1 = { git="https://github.com/1aim/vec1" }
 chrono = "0.4.0"
 
@@ -30,4 +30,4 @@ version="0.4.0"
 
 
 [features]
-traceing = [ "mail-codec-core/traceing" ]
+traceing = [ "mail-common/traceing" ]
