@@ -1,9 +1,9 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::Result;
-use core::codec::{EncodableInHeader, EncodeHandle};
+use common::error::Result;
+use common::codec::{EncodableInHeader, EncodeHandle};
 use vec1::Vec1;
-use core::utils::{ HeaderTryFrom, HeaderTryInto };
+use common::utils::{ HeaderTryFrom, HeaderTryInto };
 
 use error::ComponentError::PhraseListSize0;
 

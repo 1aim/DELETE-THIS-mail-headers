@@ -6,9 +6,9 @@ use soft_ascii_string::SoftAsciiStr;
 use mime::push_params_to_buffer;
 use mime::spec::{MimeSpec, Ascii, Modern, Internationalized};
 
-use core::error::Result;
-use core::codec::{EncodableInHeader, EncodeHandle};
-use core::utils::{ FileMeta, HeaderTryFrom };
+use common::error::Result;
+use common::codec::{EncodableInHeader, EncodeHandle};
+use common::utils::{ FileMeta, HeaderTryFrom };
 
 
 use error::ComponentError::InvalidContentDisposition;

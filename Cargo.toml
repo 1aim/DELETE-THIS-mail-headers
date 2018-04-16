@@ -17,6 +17,7 @@ quoted-string = { git="https://github.com/1aim/quoted-string", version="0.5" }
 mail-common = { git="https://github.com/1aim/mail-common" }
 vec1 = { git="https://github.com/1aim/vec1" }
 chrono = "0.4.0"
+total-order-multi-map = { git="https://github.com/1aim/total-order-multi-map" }
 
 [dependencies.mime]
 git="https://github.com/1aim/mime"

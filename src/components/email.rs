@@ -5,19 +5,19 @@ use soft_ascii_string::SoftAsciiChar;
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 use quoted_string::quote_if_needed;
 
-use core::error::Result;
-use core::grammar::{
+use common::error::Result;
+use common::grammar::{
     is_ascii,
     is_atext,
     is_dtext,
     is_ws,
 };
-use core::MailType;
-use core::codec::{EncodeHandle, EncodableInHeader };
-use core::codec::idna;
-use core::utils::{HeaderTryInto, HeaderTryFrom};
-use core::data::{Input, SimpleItem, InnerUtf8 };
-use core::codec::quoted_string::UnquotedDotAtomTextValidator;
+use common::MailType;
+use common::codec::{EncodeHandle, EncodableInHeader };
+use common::codec::idna;
+use common::utils::{HeaderTryInto, HeaderTryFrom};
+use common::data::{Input, SimpleItem, InnerUtf8 };
+use common::codec::quoted_string::UnquotedDotAtomTextValidator;
 
 use error::ComponentError::{InvalidDomainName, InvalidEmail, InvalidLocalPart};
 
@@ -236,7 +236,7 @@ impl Deref for Domain {
 
 #[cfg(test)]
 mod test {
-    use core::codec::{ Encoder, VecBodyBuf};
+    use common::codec::{ Encoder, VecBodyBuf};
     use super::*;
 
     #[test]

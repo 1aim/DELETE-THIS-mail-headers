@@ -1,18 +1,18 @@
 
 use quoted_string;
 
-use core::error::Result;
-use core::codec::{
+use common::error::Result;
+use common::codec::{
     EncodedWordEncoding,
     EncodableInHeader, EncodeHandle,
     WriterWrapper
 };
-use core::codec::quoted_string::{MailQsSpec, InternationalizedMailQsSpec};
-use core::grammar::is_atext;
-use core::grammar::encoded_word::EncodedWordContext;
-//use core::codec::quoted_string;
-use core::utils::{HeaderTryFrom, HeaderTryInto};
-use core::data::Input;
+use common::codec::quoted_string::{MailQsSpec, InternationalizedMailQsSpec};
+use common::grammar::is_atext;
+use common::grammar::encoded_word::EncodedWordContext;
+//use common::codec::quoted_string;
+use common::utils::{HeaderTryFrom, HeaderTryInto};
+use common::data::Input;
 
 use error::ComponentError::InvalidWord;
 
@@ -119,10 +119,10 @@ pub fn do_encode_word<'a,'b: 'a>(
 mod test {
     use std::mem;
 
-    use core::MailType;
-    use core::codec::{ Encoder, VecBodyBuf};
-    use core::codec::TraceToken::*;
-    use core::codec::simplify_trace_tokens;
+    use common::MailType;
+    use common::codec::{ Encoder, VecBodyBuf};
+    use common::codec::TraceToken::*;
+    use common::codec::simplify_trace_tokens;
 
     use super::*;
     use super::super::FWS;

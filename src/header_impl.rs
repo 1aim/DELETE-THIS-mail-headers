@@ -116,9 +116,9 @@ def_headers! {
 mod validators {
     use std::collections::HashMap;
 
-    use core::error::Result;
-    use core::codec::EncodableInHeader;
-    use core::header::{ HeaderMap, Header, HeaderName };
+    use common::error::Result;
+    use common::codec::EncodableInHeader;
+    use ::{ HeaderMap, Header, HeaderName };
 
     use error::HeaderValidationError::{
         MultiMailboxFromWithoutSender,
@@ -190,9 +190,9 @@ mod validators {
 
 #[cfg(test)]
 mod test {
-    use core::header::HeaderMap;
     use components::DateTime;
-    use headers::{
+    use ::{
+        HeaderMap,
         From, ResentFrom, ResentTo, ResentDate,
         Sender, ResentSender, Subject
     };

@@ -5,9 +5,9 @@ use soft_ascii_string::{SoftAsciiStr,SoftAsciiChar};
 use mime::{MediaType as _MediaType, Name, AnyMediaType};
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 
-use core::error::Result;
-use core::utils::HeaderTryFrom;
-use core::codec::{EncodeHandle, EncodableInHeader};
+use common::error::Result;
+use common::utils::HeaderTryFrom;
+use common::codec::{EncodeHandle, EncodableInHeader};
 use error::ComponentError::{
     ParsingMediaTypeFailed,
     InvalidMediaTypeParts,

@@ -1,6 +1,6 @@
-use core::error::Result;
-use core::grammar::{is_vchar, is_ws};
-use core::MailType;
+use common::error::Result;
+use common::grammar::{is_vchar, is_ws};
+use common::MailType;
 
 use error::ComponentError::NeedAtLastOneVCHAR;
 

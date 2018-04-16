@@ -1,9 +1,9 @@
 use vec1::Vec1;
-use core::error::Result;
-use core::grammar::encoded_word::EncodedWordContext;
-use core::codec::{EncodableInHeader, EncodeHandle};
-use core::utils::{HeaderTryFrom, HeaderTryInto};
-use core::data::Input;
+use common::error::Result;
+use common::grammar::encoded_word::EncodedWordContext;
+use common::codec::{EncodableInHeader, EncodeHandle};
+use common::utils::{HeaderTryFrom, HeaderTryInto};
+use common::data::Input;
 
 use error::ComponentError::EmptyPhrase;
 use super::utils::text_partition::{ Partition, partition };
@@ -91,7 +91,7 @@ impl EncodableInHeader for  Phrase {
 
 #[cfg(test)]
 mod test {
-    use core::utils::HeaderTryFrom;
+    use common::utils::HeaderTryFrom;
     use super::Phrase;
 
     ec_test!{ simple, {

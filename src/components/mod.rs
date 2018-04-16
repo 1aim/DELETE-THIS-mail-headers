@@ -48,3 +48,6 @@ pub use self::phrase_list::PhraseList;
 
 mod disposition;
 pub use self::disposition::*;
+
+mod raw_unstructured;
+pub use self::raw_unstructured::*;

@@ -1,8 +1,8 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::Result;
-use core::utils::{HeaderTryFrom, HeaderTryInto};
-use core::codec::{EncodableInHeader, EncodeHandle};
+use common::error::Result;
+use common::utils::{HeaderTryFrom, HeaderTryInto};
+use common::codec::{EncodableInHeader, EncodeHandle};
 
 use super::Phrase;
 use super::Email;

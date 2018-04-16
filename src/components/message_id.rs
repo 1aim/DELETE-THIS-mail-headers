@@ -4,10 +4,10 @@ use nom::IResult;
 use soft_ascii_string::SoftAsciiChar;
 use vec1::Vec1;
 
-use core::error::Result;
-use core::codec::{EncodableInHeader, EncodeHandle};
-use core::data::{ Input, SimpleItem };
-use core::utils::{HeaderTryFrom, HeaderTryInto};
+use common::error::Result;
+use common::codec::{EncodableInHeader, EncodeHandle};
+use common::data::{ Input, SimpleItem };
+use common::utils::{HeaderTryFrom, HeaderTryInto};
 
 use error::ComponentError::InvalidMessageId;
 
@@ -86,8 +86,8 @@ impl EncodableInHeader for  MessageIDList {
 
 #[cfg(test)]
 mod test {
-    use core::MailType;
-    use core::codec::{ Encoder, VecBodyBuf };
+    use common::MailType;
+    use common::codec::{ Encoder, VecBodyBuf };
     use super::*;
 
     ec_test!{ simple, {
@@ -138,8 +138,8 @@ mod test {
 
 mod parser_parts {
     use nom::IResult;
-    use core::grammar::{is_atext, is_dtext};
-    use core::MailType;
+    use common::grammar::{is_atext, is_dtext};
+    use common::MailType;
 
     pub fn parse_message_id( input: &str) -> IResult<&str, (&str, &str)> {
         do_parse!( input,

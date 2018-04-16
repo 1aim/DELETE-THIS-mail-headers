@@ -1,9 +1,9 @@
 use chrono;
 use soft_ascii_string::SoftAsciiString;
 
-use core::utils::HeaderTryFrom;
-use core::error::Result;
-use core::codec::{EncodeHandle, EncodableInHeader};
+use common::utils::HeaderTryFrom;
+use common::error::Result;
+use common::codec::{EncodeHandle, EncodableInHeader};
 
 /// A DateTime header component wrapping chrono::DateTime<chrono::Utc>
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]

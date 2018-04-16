@@ -1,7 +1,7 @@
 use soft_ascii_string::SoftAsciiStr;
 
-use core::error::Result;
-use core::codec::{ EncodeHandle, EncodableInHeader};
+use common::error::Result;
+use common::codec::{ EncodeHandle, EncodableInHeader};
 
 /// The TransferEnecoding header component mainly used by the ContentTransferEncodingHeader.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

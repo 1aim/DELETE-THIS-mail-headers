@@ -1,3 +1,4 @@
+use common::MailType;
 use mime::error::{Error as ParserError};
 
 quick_error! {
@@ -19,7 +20,7 @@ quick_error! {
 macro_rules! bail_header {
     ($ce:expr) => ({
         use $crate::error::HeaderValidationError;
-        use $crate::core::error::{ErrorKind, ResultExt};
+        use $crate::common::error::{ErrorKind, ResultExt};
         let err: HeaderValidationError = $ce;
         return Err(err).chain_err(||ErrorKind::HeaderValidationFailure)
     });
@@ -35,6 +36,11 @@ quick_error! {
 //            description("given input was not a valid token (syntax)")
 //            display("expected valid token (syntax) got: {:?}", got)
 //        }
+
+        InvalidRawUnstructured(got: String, mail_type: MailType) {
+            description("Input not directly usable as unstructured header field")
+            display("expected raw unstructured string got: {:?}", got)
+        }
 
         InvalidContentDisposition(got: String) {
             description(
@@ -116,7 +122,7 @@ quick_error! {
 macro_rules! bail {
     ($ce:expr) => ({
         use $crate::error::ComponentError;
-        use $crate::core::error::{ErrorKind, ResultExt};
+        use $crate::__common::error::{ErrorKind, ResultExt};
         let err: ComponentError = $ce;
         return Err(err).chain_err(||ErrorKind::HeaderComponentEncodingFailure)
     });
@@ -126,7 +132,7 @@ macro_rules! bail {
 macro_rules! error {
     ($ce:expr) => ({
         use $crate::error::ComponentError;
-        use $crate::core::error::{Error, ErrorKind};
+        use $crate::__common::error::{Error, ErrorKind};
         let err: ComponentError = $ce;
         Error::with_chain(err, ErrorKind::HeaderComponentEncodingFailure)
     });

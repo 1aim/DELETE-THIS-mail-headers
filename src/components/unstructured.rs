@@ -2,11 +2,11 @@ use std::ops::{ Deref, DerefMut};
 
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::Result;
-use core::grammar::is_vchar;
-use core::codec::{EncodeHandle, EncodableInHeader, EncodedWordEncoding, WriterWrapper};
-use core::data::Input;
-use core::utils::{HeaderTryInto, HeaderTryFrom};
+use common::error::Result;
+use common::grammar::is_vchar;
+use common::codec::{EncodeHandle, EncodableInHeader, EncodedWordEncoding, WriterWrapper};
+use common::data::Input;
+use common::utils::{HeaderTryInto, HeaderTryFrom};
 
 use error::ComponentError::EmptyPhrase;
 
@@ -113,8 +113,8 @@ impl EncodableInHeader for  Unstructured {
 
 #[cfg(test)]
 mod test {
-    use core::MailType;
-    use core::codec::{Encoder, VecBodyBuf};
+    use common::MailType;
+    use common::codec::{Encoder, VecBodyBuf};
 
     use super::*;
 

@@ -2,9 +2,9 @@ use std::iter::IntoIterator;
 use vec1::Vec1;
 use soft_ascii_string::SoftAsciiChar;
 
-use core::error::Result;
-use core::codec::{EncodableInHeader, EncodeHandle};
-use core::utils::{ HeaderTryFrom, HeaderTryInto};
+use common::error::Result;
+use common::codec::{EncodableInHeader, EncodeHandle};
+use common::utils::{ HeaderTryFrom, HeaderTryInto};
 
 use error::ComponentError::MailboxListSize0;
 
