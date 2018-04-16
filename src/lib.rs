@@ -8,35 +8,25 @@ extern crate quick_error;
 extern crate chrono;
 #[cfg_attr(test, macro_use)]
 extern crate vec1;
-
+extern crate total_order_multi_map;
 //FIXME[rust/macros use private] remove pub re-export
 #[cfg_attr(test, macro_use)]
 pub extern crate mail_common as __common;
-// I can not reexport a private think anymore, so I need to reexport the
-// extern crate and then make the normal name available, too
-use __common as common;
 
-extern crate total_order_multi_map;
-
-
-#[cfg(all(not(feature="traceing"), test))]
+#[cfg(all(test, not(feature="traceing")))]
 compile_error! { "testing needs feature `traceing` to be enabled" }
 
 //TODO order modules
 #[macro_use]
 mod macros;
-
 #[macro_use]
 pub mod error;
 pub mod components;
-
-#[macro_use]
-mod header_macro;
-
+mod name;
 #[macro_use]
 pub mod map;
-
-mod name;
+#[macro_use]
+mod header_macro;
 mod header_impl;
 
 pub use self::header_macro::*;
@@ -47,6 +37,9 @@ pub use self::header_impl::*;
 // reexports for macros
 #[doc(hidden)]
 pub use soft_ascii_string::SoftAsciiStr as __SoftAsciiStr;
+// I can not reexport a private think anymore, so I need to reexport the
+// extern crate and then make the normal name available, too
+use __common as common;
 
 
 pub trait Header {
