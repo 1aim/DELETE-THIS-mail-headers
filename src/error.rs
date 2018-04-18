@@ -81,24 +81,24 @@ macro_rules! header_validation_bail {
 
 
 #[derive(Debug)]
-enum Chain {
+pub enum ChainTail {
     Backtrace(Backtrace),
     Error(FError)
 }
 
-impl Chain {
+impl ChainTail {
 
     fn backtrace(&self) -> &Backtrace {
         match *self {
-            Chain::Backtrace(ref trace) => trace,
-            Chain::Error(ref error) => error.backtrace()
+            ChainTail::Backtrace(ref trace) => trace,
+            ChainTail::Error(ref error) => error.backtrace()
         }
     }
 
     fn cause(&self) -> Option<&Fail> {
         match *self {
-            Chain::Backtrace(_) => None,
-            Chain::Error(ref error) => Some(error.cause())
+            ChainTail::Backtrace(_) => None,
+            ChainTail::Error(ref error) => Some(error.cause())
         }
     }
 }
@@ -106,7 +106,7 @@ impl Chain {
 #[derive(Debug)]
 pub struct ComponentCreationError {
     component: &'static str,
-    backtrace: Chain,
+    backtrace: ChainTail,
     str_context: Option<String>
 }
 
@@ -117,7 +117,7 @@ impl ComponentCreationError {
     {
         ComponentCreationError {
             component,
-            backtrace: Chain::Error(parent.into()),
+            backtrace: ChainTail::Error(parent.into()),
             str_context: None
         }
     }
@@ -125,7 +125,7 @@ impl ComponentCreationError {
     pub fn new(component: &'static str) -> Self {
         ComponentCreationError {
             component,
-            backtrace: Chain::Backtrace(Backtrace::new()),
+            backtrace: ChainTail::Backtrace(Backtrace::new()),
             str_context: None
         }
     }
@@ -135,7 +135,7 @@ impl ComponentCreationError {
     {
         ComponentCreationError {
             component,
-            backtrace: Chain::Backtrace(Backtrace::new()),
+            backtrace: ChainTail::Backtrace(Backtrace::new()),
             str_context: Some(str_context.into())
         }
     }
@@ -172,98 +172,3 @@ impl Display for ComponentCreationError {
         write!(fter, "creating component {} failed", self.component)
     }
 }
-// #[derive(Clone, Debug, Fail, PartialEq, Eq, Hash)]
-// pub enum ComponentError {
-//     #[fail(display = "expected raw unstructured string got: {:?}", got)]
-//     InvalidRawUnstructured { got: String },
-
-//     #[fail(display = "expected \"inline\" or \"attachment\" got {:?}", got)]
-//     InvalidContentDisposition { got: String },
-
-//     #[fail(display = "expected word valid in context, got {:?}", got)]
-//     InvalidWord { got: String },
-
-//     #[fail(display = "expected a valid domain name, got: {:?}", got )]
-//     InvalidDomainName { got: String },
-
-//     #[fail(display = "expected a valid local part, got: {:?}", got)]
-//     InvalidLocalPart { got: String },
-
-//     #[fail(display = "expected a valid Email, got: {:?}", got)]
-//     InvalidEmail { got: String },
-
-//     #[fail(display = "expected a valid MessageId, got: {:?}", got)]
-//     InvalidMessageId { got: String },
-
-//     #[fail(display = "constructing media type failed: {:?}", error)]
-//     InvalidMediaTypeParts { error: ParserError },
-
-//     #[fail(display = "a mailbox list consist of at last one phrase, not 0")]
-//     MailboxListSize0,
-
-//     #[fail(display = "a phrase list consist of at last one phrase, not 0")]
-//     PhraseListSize0,
-
-//     #[fail(display = "a phrase consist of at last one word, neither empty nor only wsp are allowed")]
-//     EmptyPhrase,
-
-//     #[fail(display = "need at last one VCHAR in input got: {:?}", got)]
-//     NeedAtLastOneVCHAR { got: String },
-
-//     #[fail(display = "parsing media type failed: {}", error)]
-//     ParsingMediaTypeFailed { error: ParserError }
-// }
-
-// impl ComponentError {
-
-//     fn encoding_error_kind(&self) -> EncodingErrorKind {
-//         use self::ComponentError::*;
-//         match *self {
-//             // all of this could be replaced with Malformed { place: "xxxx" }
-//             InvalidRawUnstructured { .. } => T,
-//             InvalidContentDisposition { .. } => T,
-//             InvalidWord { .. } => T,
-//             InvalidDomainName { .. } => T,
-//             InvalidLocalPart { .. } => T,
-//             InvalidLocalPart { .. } => T,
-//             InvalidEmail { .. } => T,
-//             InvalidMessageId { .. } => T,
-//             InvalidMediaTypeParts { .. } => T,
-
-//             // all of this are Size0 Errors in the error chain
-//             MailboxListSize0 => T,
-//             PhraseListSize0 => T,
-//             EmptyPhrase => T,
-
-//             // this is a PartitionError in the chain
-//             NeedAtLastOneVCHAR { .. } => T,
-//             // this is a  mime::ParsingError in the chain
-//             ParsingMediaTypeFailed { .. } => T,
-//         }
-//     }
-// }
-
-// impl Into<EncodingError> for ComponentError {
-//     fn into(self) -> EncodingError {
-
-//     }
-// }
-
-// // macro_rules! bail {
-// //     ($ce:expr) => ({
-// //         use $crate::error::ComponentError;
-// //         use $crate::__common::error::{ErrorKind, ResultExt};
-// //         let err: ComponentError = $ce;
-// //         return Err(err).chain_err(||ErrorKind::HeaderComponentEncodingFailure)
-// //     });
-// // }
-
-
-// // macro_rules! error {
-// //     ($ce:expr) => ({
-// //         use $crate::error::ComponentError;
-// //         use $crate::__common::error::{Error, ErrorKind};
-// //         let err: ComponentError = $ce;
-// //         Error::with_chain(err, ErrorKind::HeaderComponentEncodingFailure)
-// //     });
-// // }
