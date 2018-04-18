@@ -29,22 +29,22 @@ impl HeaderTypeError {
 
 #[derive(Debug, Fail)]
 pub enum HeaderInsertionError {
-    #[fail(display = "inserting header failed: {}", inner)]
-    Type { inner: HeaderTypeError },
+    #[fail(display = "inserting header failed: {}", _0)]
+    Type(HeaderTypeError),
 
-    #[fail(display = "inserting header failed: {}", inner)]
-    Component { inner: ComponentCreationError },
+    #[fail(display = "inserting header failed: {}", _0)]
+    Component(ComponentCreationError),
 }
 
 impl From<HeaderTypeError> for HeaderInsertionError {
     fn from(inner: HeaderTypeError) -> Self {
-        HeaderInsertionError::Type { inner }
+        HeaderInsertionError::Type(inner)
     }
 }
 
 impl From<ComponentCreationError> for HeaderInsertionError {
     fn from(inner: ComponentCreationError) -> Self {
-        HeaderInsertionError::Component { inner }
+        HeaderInsertionError::Component(inner)
     }
 }
 
