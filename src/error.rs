@@ -59,14 +59,17 @@ pub enum HeaderValidationError {
 
 #[derive(Copy, Clone, Debug, Fail, PartialEq, Eq, Hash)]
 pub enum BuildInValidationError {
-    #[fail(display="From field contained multiple addresses but no Sender field was set")]
+    #[fail(display = "From field contained multiple addresses but no Sender field was set")]
     MultiMailboxFromWithoutSender,
 
-    #[fail(display="each resent block must have a resent-date field")]
+    #[fail(display = "each resent block must have a resent-date field")]
     ResentDateFieldMissing,
 
-    #[fail(display="Resent-From field in resent block without a Resent-Sender field")]
+    #[fail(display = "Resent-From field in resent block without a Resent-Sender field")]
     MultiMailboxResentFromWithoutResentSender,
+
+    #[fail(display = "From field missing")]
+    NoFrom,
 }
 
 macro_rules! header_validation_bail {
