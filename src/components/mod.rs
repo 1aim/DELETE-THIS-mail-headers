@@ -1,4 +1,4 @@
-mod utils;
+pub mod utils;
 
 //reexport our components
 mod date_time;

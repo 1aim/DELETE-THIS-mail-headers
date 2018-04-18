@@ -2,11 +2,10 @@ use std::iter::IntoIterator;
 use vec1::Vec1;
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::Result;
-use common::codec::{EncodableInHeader, EncodeHandle};
-use common::utils::{ HeaderTryFrom, HeaderTryInto};
-
-use error::ComponentError::MailboxListSize0;
+use common::error::EncodingError;
+use common::encoder::{EncodableInHeader, EncodeHandle};
+use ::{ HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
 
 use super::Mailbox;
 
@@ -35,7 +34,7 @@ impl IntoIterator for MailboxList {
 
 impl EncodableInHeader for  OptMailboxList {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
        encode_list( self.0.iter(), handle )
     }
 
@@ -64,19 +63,20 @@ impl EncodableInHeader for  OptMailboxList {
 impl<T> HeaderTryFrom<Vec<T>> for MailboxList
     where T: HeaderTryInto<Mailbox>
 {
-    fn try_from(vec: Vec<T>) -> Result<Self> {
+    fn try_from(vec: Vec<T>) -> Result<Self, ComponentCreationError> {
         try_from_into_iter( vec )
     }
 }
 
-fn try_from_into_iter<IT>( mboxes: IT ) -> Result<MailboxList>
+fn try_from_into_iter<IT>( mboxes: IT ) -> Result<MailboxList, ComponentCreationError>
     where IT: IntoIterator, IT::Item: HeaderTryInto<Mailbox>
 {
     let mut iter = mboxes.into_iter();
     let mut vec = if let Some( first) = iter.next() {
         Vec1::new( first.try_into()? )
     } else {
-        bail!(MailboxListSize0);
+        //TODO chain vec1 Size0Error
+        return Err(ComponentCreationError::new("MailboxList"));
     };
     for mbox in iter {
         vec.push( mbox.try_into()? );
@@ -90,7 +90,7 @@ macro_rules! impl_header_try_from_array {
         impl<T> HeaderTryFrom<[T; $len]> for MailboxList
             where T: HeaderTryInto<Mailbox>
         {
-            fn try_from( vec: [T; $len] ) -> Result<Self> {
+            fn try_from( vec: [T; $len] ) -> Result<Self, ComponentCreationError> {
                 //due to only supporting arrays halfheartedly for now
                 let heapified: Box<[T]> = Box::new(vec);
                 let vecified: Vec<_> = heapified.into();
@@ -102,7 +102,7 @@ macro_rules! impl_header_try_from_array {
         impl<T> HeaderTryFrom<[T; $len]> for OptMailboxList
             where T: HeaderTryInto<Mailbox>
         {
-            fn try_from( vec: [T; $len] ) -> Result<Self> {
+            fn try_from( vec: [T; $len] ) -> Result<Self, ComponentCreationError> {
                 let heapified: Box<[T]> = Box::new(vec);
                 let vecified: Vec<_> = heapified.into();
                 let mut out = Vec::new();
@@ -136,7 +136,7 @@ macro_rules! impl_header_try_from_tuple {
             where $($vs: HeaderTryInto<Mailbox>),*
         {
             #[allow(non_snake_case)]
-            fn try_from( ($($vs,)*): ($($vs,)*) ) -> Result<Self> {
+            fn try_from( ($($vs,)*): ($($vs,)*) ) -> Result<Self, ComponentCreationError> {
                 // we use the type names as variable names,
                 // not nice but it works
                 //let ($($vs),*) = src;
@@ -157,7 +157,7 @@ macro_rules! impl_header_try_from_tuple {
             where $($vs: HeaderTryInto<Mailbox>),*
         {
             #[allow(non_snake_case)]
-            fn try_from( ($($vs,)*): ($($vs,)*) ) -> Result<Self> {
+            fn try_from( ($($vs,)*): ($($vs,)*) ) -> Result<Self, ComponentCreationError> {
                 // we use the type names as variable names,
                 // not nice but it works
                 //let ($($vs),*) = src;
@@ -170,62 +170,27 @@ macro_rules! impl_header_try_from_tuple {
             }
         }
     );
-    ($([$($vs:ident),*]),*) => ($(
-        impl_header_try_from_tuple!{ _MBoxList [$($vs),*] }
-        impl_header_try_from_tuple!{ _OptMBoxList [$($vs),*] }
-    )*);
+    ([]) => ();
+    ([$first_vs:ident $(, $vs:ident)*]) => (
+        impl_header_try_from_tuple!{ _MBoxList [$first_vs $(, $vs)* ] }
+        impl_header_try_from_tuple!{ _OptMBoxList [$first_vs $(, $vs)*] }
+        impl_header_try_from_tuple!{ [$($vs),*] }
+    );
 }
 
 impl_header_try_from_tuple! {
-    [A0],
-    [A0, A1],
-    [A0, A1, A2],
-    [A0, A1, A2, A3],
-    [A0, A1, A2, A3, A4],
-    [A0, A1, A2, A3, A4, A5],
-    [A0, A1, A2, A3, A4, A5, A6],
-    [A0, A1, A2, A3, A4, A5, A6, A7],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23, A24],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23, A24, A25],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23, A24, A25, A26],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23, A24, A25, A26, A27],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23, A24, A25, A26, A27, A28],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23, A24, A25, A26, A27, A28, A29],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23, A24, A25, A26, A27, A28, A29, A30],
-    [A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
-        A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31]
+    [
+        A0,  A1,  A2,  A3,  A4,  A5,  A6,  A7,
+        A8,  A9,  A10, A11, A12, A13, A14, A15,
+        A16, A17, A18, A19, A20, A21, A22, A23,
+        A24, A25, A26, A27, A28, A29, A30, A31
+    ]
 }
 
 impl<T> HeaderTryFrom<Vec<T>> for OptMailboxList
     where T: HeaderTryInto<Mailbox>
 {
-    fn try_from(vec: Vec<T>) -> Result<Self> {
+    fn try_from(vec: Vec<T>) -> Result<Self, ComponentCreationError> {
         let mut out = Vec::new();
         for ele in vec.into_iter() {
             out.push( ele.try_into()? );
@@ -236,7 +201,7 @@ impl<T> HeaderTryFrom<Vec<T>> for OptMailboxList
 
 impl EncodableInHeader for  MailboxList {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         encode_list( self.0.iter(), handle )
     }
 
@@ -245,7 +210,7 @@ impl EncodableInHeader for  MailboxList {
     }
 }
 
-fn encode_list<'a, I>(list_iter: I, handle: &mut EncodeHandle) -> Result<()>
+fn encode_list<'a, I>(list_iter: I, handle: &mut EncodeHandle) -> Result<(), EncodingError>
     where I: Iterator<Item=&'a Mailbox>
 {
     sep_for!{ mailbox in list_iter;

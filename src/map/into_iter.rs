@@ -1,6 +1,6 @@
 use std::vec;
 
-use common::codec::EncodableInHeader;
+use common::encoder::EncodableInHeader;
 use ::HeaderName;
 
 use super::HeaderMap;

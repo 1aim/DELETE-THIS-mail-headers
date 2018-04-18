@@ -12,7 +12,6 @@ macro_rules! sep_for {
 }
 
 
-
 macro_rules! deref0 {
     (+mut $name:ident => $tp:ty) => (
         deref0!{-mut $name => $tp }

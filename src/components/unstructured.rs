@@ -1,14 +1,17 @@
 use std::ops::{ Deref, DerefMut};
 
+use failure::Fail;
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::Result;
 use common::grammar::is_vchar;
-use common::codec::{EncodeHandle, EncodableInHeader, EncodedWordEncoding, WriterWrapper};
-use common::data::Input;
-use common::utils::{HeaderTryInto, HeaderTryFrom};
+use common::error::{EncodingError, EncodingErrorKind};
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::bind::encoded_word::{EncodedWordEncoding, WriterWrapper};
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
+use ::data::Input;
 
-use error::ComponentError::EmptyPhrase;
+use vec1::Size0Error;
 
 use super::utils::text_partition::{partition, Partition};
 
@@ -35,7 +38,7 @@ impl DerefMut for Unstructured {
 impl<T> HeaderTryFrom<T> for Unstructured
     where T: HeaderTryInto<Input>
 {
-    fn try_from(text: T) -> Result<Self> {
+    fn try_from(text: T) -> Result<Self, ComponentCreationError> {
         let text = text.try_into()?;
         Ok( Unstructured { text })
     }
@@ -45,16 +48,20 @@ impl<T> HeaderTryFrom<T> for Unstructured
 
 impl EncodableInHeader for  Unstructured {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         let text: &str = &*self.text;
         if text.len() == 0 {
             return Ok( () )
         }
 
-        let blocks = partition( text )?;
+        let partitions = partition(text)
+            .map_err(|err| EncodingError
+                ::from(err.context(EncodingErrorKind::Malformed))
+                .with_str_context(text)
+            )?;
 
         let mut had_word = false;
-        for block in blocks.into_iter() {
+        for block in partitions.into_iter() {
             match block {
                 Partition::VCHAR( data ) => {
                     had_word = true;
@@ -98,9 +105,13 @@ impl EncodableInHeader for  Unstructured {
         }
 
         if had_word {
-            Ok( () )
+            Ok(())
         } else {
-            bail!(EmptyPhrase);
+            return Err(
+                EncodingError
+                ::from(Size0Error.context(EncodingErrorKind::Malformed))
+                .with_str_context(text)
+            );
         }
 
     }
@@ -114,7 +125,7 @@ impl EncodableInHeader for  Unstructured {
 #[cfg(test)]
 mod test {
     use common::MailType;
-    use common::codec::{Encoder, VecBodyBuf};
+    use common::encoder::{Encoder, VecBodyBuf};
 
     use super::*;
 

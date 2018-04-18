@@ -1,7 +1,8 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::Result;
-use common::codec::{EncodableInHeader, EncodeHandle};
+use common::error::EncodingError;
+use common::encoder::{EncodeHandle, EncodableInHeader};
+
 use super::word::{ Word, do_encode_word };
 use super::{ Email, Domain };
 
@@ -15,7 +16,7 @@ pub enum ReceivedToken {
 
 impl EncodableInHeader for  ReceivedToken {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         use self::ReceivedToken::*;
         match *self {
             Word( ref word ) => {
@@ -42,9 +43,9 @@ impl EncodableInHeader for  ReceivedToken {
 
 #[cfg(test)]
 mod test {
-    use common::utils::HeaderTryFrom;
+    use ::HeaderTryFrom;
     use common::MailType;
-    use common::codec::{Encoder, VecBodyBuf};
+    use common::encoder::{Encoder, VecBodyBuf};
     use super::*;
 
     ec_test!{ a_domain, {

@@ -2,8 +2,6 @@ use std::fmt;
 use soft_ascii_string::SoftAsciiStr;
 
 use common::grammar::is_ftext;
-use common::error::Result;
-use common::error::ErrorKind::InvalidHeaderName;
 
 ///
 /// Note: Normally you will never have the need to create a HeaderName instance by
@@ -24,7 +22,7 @@ impl HeaderName {
     /// This frees us from doing either case insensitive comparison/hash wrt. hash map
     /// lookups, or converting all names to upper/lower case.
     ///
-    pub fn new( name: &'static SoftAsciiStr ) -> Result<Self> {
+    pub fn new( name: &'static SoftAsciiStr ) -> Result<Self, InvalidHeaderName> {
         HeaderName::validate_name( name )?;
         Ok( HeaderName { name } )
     }
@@ -68,29 +66,29 @@ impl HeaderName {
     /// validates if the header name is valid
     ///
     /// by only allowing names in "snake case" no case
-    /// insensitive comparsion or case conversion is needed
+    /// insensitive comparison or case conversion is needed
     /// for header names
-    fn validate_name( name: &SoftAsciiStr ) -> Result<()> {
+    fn validate_name(name: &SoftAsciiStr) -> Result<(), InvalidHeaderName> {
         let mut begin_of_word = true;
         if name.len() < 1 {
-            return Err(InvalidHeaderName(name.as_str().to_owned()).into());
+            return Err(InvalidHeaderName { invalid_name: name.to_owned().into() });
         }
 
         for ch in name.as_str().chars() {
             if !is_ftext( ch ) {
-                return Err(InvalidHeaderName(name.as_str().to_owned()).into());
+                return Err(InvalidHeaderName { invalid_name: name.to_owned().into() });
             }
             match ch {
                 'a'...'z' => {
                     if begin_of_word {
-                        return Err(InvalidHeaderName(name.as_str().to_owned()).into());
+                        return Err(InvalidHeaderName { invalid_name: name.to_owned().into() });
                     }
                 },
                 'A'...'Z' => {
                     if begin_of_word {
                         begin_of_word = false;
                     } else {
-                        return Err(InvalidHeaderName(name.as_str().to_owned()).into());
+                        return Err(InvalidHeaderName { invalid_name: name.to_owned().into() });
                     }
                 },
                 '0'...'9' => {
@@ -98,7 +96,7 @@ impl HeaderName {
                 },
                 ch => {
                     if ch < '!' || ch > '~' || ch == ':' {
-                        return Err(InvalidHeaderName(name.as_str().to_owned()).into());
+                        return Err(InvalidHeaderName { invalid_name: name.to_owned().into() });
                     }
                     begin_of_word = true;
                 }
@@ -110,6 +108,11 @@ impl HeaderName {
     }
 }
 
+#[derive(Clone, Debug, Fail)]
+#[fail(display = "given name is not a valid header name: {:?}", invalid_name)]
+pub struct InvalidHeaderName {
+    invalid_name: String
+}
 
 #[cfg(test)]
 mod test {

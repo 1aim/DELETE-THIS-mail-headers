@@ -1,20 +1,14 @@
-
 use quoted_string;
 
-use common::error::Result;
-use common::codec::{
-    EncodedWordEncoding,
-    EncodableInHeader, EncodeHandle,
-    WriterWrapper
-};
-use common::codec::quoted_string::{MailQsSpec, InternationalizedMailQsSpec};
 use common::grammar::is_atext;
 use common::grammar::encoded_word::EncodedWordContext;
-//use common::codec::quoted_string;
-use common::utils::{HeaderTryFrom, HeaderTryInto};
-use common::data::Input;
-
-use error::ComponentError::InvalidWord;
+use common::error::{EncodingError, EncodingErrorKind};
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::bind::encoded_word::{EncodedWordEncoding, WriterWrapper};
+use common::bind::quoted_string::{MailQsSpec, InternationalizedMailQsSpec};
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
+use ::data::Input;
 
 
 use super::CFWS;
@@ -32,7 +26,7 @@ impl<T> HeaderTryFrom<T> for Word
     where T: HeaderTryInto<Input>
 {
 
-    fn try_from( input: T ) -> Result<Self> {
+    fn try_from( input: T ) -> Result<Self, ComponentCreationError> {
         //TODO there should be a better way, I think I take the grammar to literal here
         // could not any WSP be a potential FWSP, do we really need this kind of fine gained
         // control, it feels kind of useless??
@@ -71,7 +65,7 @@ pub fn do_encode_word<'a,'b: 'a>(
     word: &'a Word,
     handle: &'a mut EncodeHandle<'b>,
     ecw_ctx: Option<EncodedWordContext>,
-) -> Result<()> {
+) -> Result<(), EncodingError> {
 
     if let Some( pad ) = word.left_padding.as_ref() {
         pad.encode( handle )?;
@@ -103,7 +97,11 @@ pub fn do_encode_word<'a,'b: 'a>(
                     //spec is mime
                     quoted_string::quote::<MailQsSpec>(input)
                 };
-            let quoted = res.map_err(|_err| error!(InvalidWord(input.into())))?;
+            let quoted = res.map_err(|_err| {
+                EncodingError
+                    ::from(EncodingErrorKind::Malformed)
+                    .with_str_context(input)
+            })?;
             handle.write_str_unchecked(&*quoted)
         }
     })?;
@@ -120,9 +118,9 @@ mod test {
     use std::mem;
 
     use common::MailType;
-    use common::codec::{ Encoder, VecBodyBuf};
-    use common::codec::TraceToken::*;
-    use common::codec::simplify_trace_tokens;
+    use common::encoder::{ Encoder, VecBodyBuf};
+    use common::encoder::TraceToken::*;
+    use common::encoder::simplify_trace_tokens;
 
     use super::*;
     use super::super::FWS;

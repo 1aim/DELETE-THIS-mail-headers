@@ -1,8 +1,9 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::Result;
-use common::utils::{HeaderTryFrom, HeaderTryInto};
-use common::codec::{EncodableInHeader, EncodeHandle};
+use common::error::EncodingError;
+use common::encoder::{EncodableInHeader, EncodeHandle};
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
 
 use super::Phrase;
 use super::Email;
@@ -17,8 +18,8 @@ pub struct Mailbox {
 
 impl Mailbox {
 
-    pub fn auto_gen_name<F>(&mut self, default_fn: F) -> Result<()>
-        where F: FnOnce(&Email) -> Result<Option<Phrase>>
+    pub fn auto_gen_name<F>(&mut self, default_fn: F) -> Result<(), ComponentCreationError>
+        where F: FnOnce(&Email) -> Result<Option<Phrase>, ComponentCreationError>
     {
         if self.display_name.is_none() {
             let default_name = default_fn(&self.email)?;
@@ -27,8 +28,8 @@ impl Mailbox {
         Ok(())
     }
 
-    pub fn with_default_name<F>(mut self, default_fn: F) -> Result<Mailbox>
-        where F: FnOnce(&Email) -> Result<Option<Phrase>>
+    pub fn with_default_name<F>(mut self, default_fn: F) -> Result<Mailbox, ComponentCreationError>
+        where F: FnOnce(&Email) -> Result<Option<Phrase>, ComponentCreationError>
     {
         self.auto_gen_name(default_fn)?;
         Ok(self)
@@ -55,7 +56,7 @@ impl From<(Option<Phrase>, Email)> for Mailbox {
 impl<E> HeaderTryFrom<E> for Mailbox
     where E: HeaderTryInto<Email>
 {
-    fn try_from(email: E) -> Result<Self> {
+    fn try_from(email: E) -> Result<Self, ComponentCreationError> {
         Ok( Mailbox::from( email.try_into()? ) )
     }
 }
@@ -63,7 +64,7 @@ impl<E> HeaderTryFrom<E> for Mailbox
 impl<E> HeaderTryFrom<(NoDisplayName, E)> for Mailbox
     where E: HeaderTryInto<Email>
 {
-    fn try_from( pair: (NoDisplayName, E) ) -> Result<Self> {
+    fn try_from( pair: (NoDisplayName, E) ) -> Result<Self, ComponentCreationError> {
         let email = pair.1.try_into()?;
         Ok( Mailbox { display_name: None, email } )
     }
@@ -71,7 +72,7 @@ impl<E> HeaderTryFrom<(NoDisplayName, E)> for Mailbox
 impl<P, E> HeaderTryFrom<(Option<P>, E)> for Mailbox
     where P: HeaderTryInto<Phrase>, E: HeaderTryInto<Email>
 {
-    fn try_from( pair: (Option<P>, E) ) -> Result<Self> {
+    fn try_from(pair: (Option<P>, E)) -> Result<Self, ComponentCreationError> {
         let display_name = if let Some( dn )= pair.0 {
             Some( dn.try_into()? )
         } else { None };
@@ -83,7 +84,7 @@ impl<P, E> HeaderTryFrom<(Option<P>, E)> for Mailbox
 impl<P, E> HeaderTryFrom<(P, E)> for Mailbox
     where P: HeaderTryInto<Phrase>, E: HeaderTryInto<Email>
 {
-    fn try_from( pair: (P, E) ) -> Result<Self> {
+    fn try_from( pair: (P, E) ) -> Result<Self, ComponentCreationError> {
         let display_name = Some( pair.0.try_into()? );
         let email = pair.1.try_into()?;
         Ok( Mailbox { display_name, email } )
@@ -93,7 +94,7 @@ impl<P, E> HeaderTryFrom<(P, E)> for Mailbox
 
 impl EncodableInHeader for  Mailbox {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         if let Some( display_name ) = self.display_name.as_ref() {
             display_name.encode( handle )?;
             handle.write_fws();
@@ -200,9 +201,11 @@ mod test {
                 display_name: None,
                 email: Email::try_from( "ab@cd" ).unwrap(),
             };
-            let result = mailbox.clone().with_default_name(|_| Err("ups".into()));
+            let result = mailbox.clone().with_default_name(|_| {
+                Err(ComponentCreationError::new("DisplayName"))
+            });
             let err = assert_err!(result);
-            assert_eq!(err.to_string(), "ups");
+            assert_eq!(err.to_string(), "creating component DisplayName failed");
         }
     }
 }

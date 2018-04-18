@@ -3,13 +3,13 @@
 
 use soft_ascii_string::SoftAsciiStr;
 
-use common::{HeaderTryFrom, HeaderTryInto};
-use common::data::Input;
-use common::error::Result;
 use common::grammar::is_vchar;
-use common::codec::{EncodeHandle, EncodableInHeader};
+use common::error::{EncodingError, EncodingErrorKind};
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
+use ::data::Input;
 
-use error::ComponentError::InvalidRawUnstructured;
 
 /// A unstructured header field implementation which validates the given input
 /// but does not encode any utf8 even if it would have been necessary (it will
@@ -37,7 +37,7 @@ impl<T> From<T> for RawUnstructured
 impl<T> HeaderTryFrom<T> for RawUnstructured
     where T: HeaderTryInto<Input>
 {
-    fn try_from(val: T) -> Result<Self> {
+    fn try_from(val: T) -> Result<Self, ComponentCreationError> {
         let input: Input = val.try_into()?;
         Ok( input.into() )
     }
@@ -62,12 +62,14 @@ impl AsRef<str> for RawUnstructured {
 }
 
 impl EncodableInHeader for RawUnstructured {
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         let mail_type = handle.mail_type();
 
         if !self.text.chars().all(|ch| is_vchar(ch, mail_type)) {
-            let input = self.text.as_str().to_owned();
-            bail!(InvalidRawUnstructured(input, mail_type))
+            return Err(
+                EncodingError::from(EncodingErrorKind::Malformed)
+                    .with_str_context(self.text.as_str())
+            );
         }
 
         if handle.mail_type().is_internationalized() {

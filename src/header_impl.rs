@@ -116,20 +116,14 @@ def_headers! {
 mod validators {
     use std::collections::HashMap;
 
-    use common::error::Result;
-    use common::codec::EncodableInHeader;
+    use common::encoder::EncodableInHeader;
     use ::{ HeaderMap, Header, HeaderName };
-
-    use error::HeaderValidationError::{
-        MultiMailboxFromWithoutSender,
-        ResentDateFieldMissing,
-        MultiMailboxResentFromWithoutResentSender
-    };
+    use ::error::HeaderValidationError;
 
     use super::{ From, ResentFrom, Sender, ResentSender, ResentDate };
 
 
-    pub fn from(map: &HeaderMap) -> Result<()> {
+    pub fn from(map: &HeaderMap) -> Result<(), HeaderValidationError> {
         // Note: we do not care about the quantity of From bodies,
         // nor "other" From bodies
         // (which do not use a MailboxList and we could
@@ -143,17 +137,17 @@ mod validators {
 
         if needs_sender && !map.contains(Sender) {
             //this is the wrong bail...
-            bail_header!(MultiMailboxFromWithoutSender);
+            header_validation_bail!(kind: MultiMailboxFromWithoutSender);
         }
         Ok(())
     }
 
     fn validate_resent_block<'a>(
             block: &HashMap<HeaderName, &'a EncodableInHeader>
-    ) -> Result<()> {
+    ) -> Result<(), HeaderValidationError> {
         if !block.contains_key(&ResentDate::name()) {
             //this is the wrong bail...
-            bail_header!(ResentDateFieldMissing);
+            header_validation_bail!(kind: ResentDateFieldMissing);
         }
         let needs_sender =
             //no Resend-From? => no problem
@@ -165,12 +159,12 @@ mod validators {
 
         if needs_sender && !block.contains_key(&ResentSender::name()) {
             //this is the wrong bail...
-            bail_header!(MultiMailboxResentFromWithoutResentSender)
+            header_validation_bail!(kind: MultiMailboxResentFromWithoutResentSender)
         }
         Ok(())
     }
 
-    pub fn resent_any(map: &HeaderMap) -> Result<()> {
+    pub fn resent_any(map: &HeaderMap) -> Result<(), HeaderValidationError> {
         let resents = map
             .iter()
             .filter(|&(name, _)| name.as_str().starts_with("Resent-"));

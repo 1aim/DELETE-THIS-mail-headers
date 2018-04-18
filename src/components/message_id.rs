@@ -4,12 +4,11 @@ use nom::IResult;
 use soft_ascii_string::SoftAsciiChar;
 use vec1::Vec1;
 
-use common::error::Result;
-use common::codec::{EncodableInHeader, EncodeHandle};
-use common::data::{ Input, SimpleItem };
-use common::utils::{HeaderTryFrom, HeaderTryInto};
-
-use error::ComponentError::InvalidMessageId;
+use common::error::EncodingError;
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
+use ::data::{ Input, SimpleItem };
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct MessageID {
@@ -28,14 +27,16 @@ impl MessageID {
 impl<T> HeaderTryFrom<T> for MessageID
     where T: HeaderTryInto<Input>
 {
-    fn try_from( input: T ) ->  Result<Self> {
+    fn try_from( input: T ) ->  Result<Self, ComponentCreationError> {
         use self::parser_parts::parse_message_id;
 
         let input = input.try_into()?;
 
-        match parse_message_id( input.as_str() ) {
+        match parse_message_id(input.as_str()) {
             IResult::Done( "", _msg_id ) => {},
-            _other => bail!(InvalidMessageId(input.as_str().to_owned()))
+            _other => {
+                return Err(ComponentCreationError::new_with_str("MessageID", input.as_str()));
+            }
         }
 
 
@@ -45,7 +46,7 @@ impl<T> HeaderTryFrom<T> for MessageID
 
 impl EncodableInHeader for  MessageID {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
         handle.write_char( SoftAsciiChar::from_char_unchecked('<') )?;
         match self.message_id {
@@ -69,7 +70,7 @@ deref0!{ +mut MessageIDList => Vec1<MessageID> }
 
 impl EncodableInHeader for  MessageIDList {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         for msg_id in self.iter() {
             msg_id.encode( handle )?;
         }
@@ -87,7 +88,7 @@ impl EncodableInHeader for  MessageIDList {
 #[cfg(test)]
 mod test {
     use common::MailType;
-    use common::codec::{ Encoder, VecBodyBuf };
+    use common::encoder::{ Encoder, VecBodyBuf };
     use super::*;
 
     ec_test!{ simple, {

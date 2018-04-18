@@ -2,16 +2,17 @@
 use std::ascii::AsciiExt;
 use std::borrow::Cow;
 
+use failure::Fail;
 use soft_ascii_string::SoftAsciiStr;
 use mime::push_params_to_buffer;
 use mime::spec::{MimeSpec, Ascii, Modern, Internationalized};
 
-use common::error::Result;
-use common::codec::{EncodableInHeader, EncodeHandle};
-use common::utils::{ FileMeta, HeaderTryFrom };
 
-
-use error::ComponentError::InvalidContentDisposition;
+use common::error::{EncodingError, EncodingErrorKind};
+use common::encoder::{EncodableInHeader, EncodeHandle};
+use common::utils::FileMeta;
+use ::HeaderTryFrom;
+use ::error::ComponentCreationError;
 
 /// Disposition Component mainly used for the Content-Disposition header (rfc2183)
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -62,13 +63,15 @@ impl Disposition {
 /// as it is type safe / compiler time checked, while this one
 /// isn't
 impl<'a> HeaderTryFrom<&'a str> for Disposition {
-    fn try_from(text: &'a str) -> Result<Self> {
-        if text.eq_ignore_ascii_case( "Inline" ) {
-            Ok( Disposition::inline() )
-        } else if text.eq_ignore_ascii_case( "Attachment" ) {
-            Ok( Disposition::attachment() )
+    fn try_from(text: &'a str) -> Result<Self, ComponentCreationError> {
+        if text.eq_ignore_ascii_case("Inline") {
+            Ok(Disposition::inline())
+        } else if text.eq_ignore_ascii_case("Attachment") {
+            Ok(Disposition::attachment())
         } else {
-            bail!(InvalidContentDisposition(text.to_owned()))
+            let mut err = ComponentCreationError::new("Disposition");
+            err.set_str_context(text);
+            return Err(err);
         }
     }
 }
@@ -79,7 +82,7 @@ impl<'a> HeaderTryFrom<&'a str> for Disposition {
 //  this are: ContentType and ContentDisposition for now
 impl EncodableInHeader for DispositionParameters {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         let mut params = Vec::<(&str, Cow<str>)>::new();
         if let Some(filename) = self.file_name.as_ref() {
             params.push(("filename", Cow::Borrowed(filename)));
@@ -112,15 +115,14 @@ impl EncodableInHeader for DispositionParameters {
             };
 
         match res {
-            Err(_) => {
-                bail!(InvalidContentDisposition(buff));
+            Err(err) => {
+                Err(err.context(EncodingErrorKind::Malformed).into())
             },
             Ok(_) => {
                 handle.write_str_unchecked(&*buff)?;
+                Ok(())
             }
         }
-
-        Ok(())
     }
 
     fn boxed_clone(&self) -> Box<EncodableInHeader> {
@@ -131,7 +133,7 @@ impl EncodableInHeader for DispositionParameters {
 
 impl EncodableInHeader for Disposition {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         use self::DispositionKind::*;
         match self.kind {
             Inline => {

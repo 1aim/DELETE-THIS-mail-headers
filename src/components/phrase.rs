@@ -1,15 +1,16 @@
-use vec1::Vec1;
-use common::error::Result;
-use common::grammar::encoded_word::EncodedWordContext;
-use common::codec::{EncodableInHeader, EncodeHandle};
-use common::utils::{HeaderTryFrom, HeaderTryInto};
-use common::data::Input;
+use vec1::{Vec1, Size0Error};
 
-use error::ComponentError::EmptyPhrase;
+use common::grammar::encoded_word::EncodedWordContext;
+use common::error::EncodingError;
+use common::encoder::{EncodeHandle, EncodableInHeader};
+
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
+use ::data::Input;
+
 use super::utils::text_partition::{ Partition, partition };
 use super::word::{ Word, do_encode_word };
 use super::{ CFWS, FWS };
-
 
 
 #[derive( Debug, Clone, Eq, PartialEq, Hash )]
@@ -17,15 +18,20 @@ pub struct Phrase( pub Vec1<Word> );
 
 impl Phrase {
 
-    pub fn new<T: HeaderTryInto<Input>>(input: T) -> Result<Self> {
-        //TODO isn't this 90% the same code as used by Unstructured
+    pub fn new<T: HeaderTryInto<Input>>(input: T) -> Result<Self, ComponentCreationError> {
         //TODO it would make much more sense if Input::shared could be taken advantage of
         let input = input.try_into()?;
 
         //OPTIMIZE: words => shared, then turn partition into shares, too
         let mut last_gap = None;
         let mut words = Vec::new();
-        for partition in partition( input.as_str() )?.into_iter() {
+        let partitions = partition( input.as_str() )
+            .map_err(|err| ComponentCreationError
+                ::from_parent(err, "Phrase")
+                .with_str_context(input.as_str())
+            )?;
+
+        for partition in partitions.into_iter() {
             match partition {
                 Partition::VCHAR( word ) => {
                     let mut word = Word::try_from( word )?;
@@ -41,8 +47,11 @@ impl Phrase {
             }
         }
 
-        let mut words = Vec1::from_vec( words )
-            .map_err( |_| error!(EmptyPhrase))?;
+        let mut words = Vec1::from_vec(words)
+            .map_err( |_| ComponentCreationError
+                ::from_parent(Size0Error, "Phrase")
+                .with_str_context(input.as_str())
+            )?;
 
         if let Some( right_padding ) = last_gap {
             words.last_mut().pad_right( right_padding );
@@ -53,19 +62,19 @@ impl Phrase {
 }
 
 impl<'a> HeaderTryFrom<&'a str> for Phrase {
-    fn try_from( input: &'a str) -> Result<Self> {
+    fn try_from(input: &'a str) -> Result<Self, ComponentCreationError> {
         Phrase::new(input)
     }
 }
 
 impl HeaderTryFrom<String> for Phrase {
-    fn try_from( input: String) -> Result<Self> {
+    fn try_from(input: String) -> Result<Self, ComponentCreationError> {
         Phrase::new(input)
     }
 }
 
 impl HeaderTryFrom<Input> for Phrase {
-    fn try_from( input: Input) -> Result<Self> {
+    fn try_from(input: Input) -> Result<Self, ComponentCreationError> {
         Phrase::new(input)
     }
 }
@@ -76,7 +85,7 @@ impl EncodableInHeader for  Phrase {
 
     //FEATURE_TODO(warn_on_bad_phrase): warn if the phrase contains chars it should not
     //  but can contain due to encoding, e.g. ascii CTL's
-    fn encode(&self, heandle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, heandle: &mut EncodeHandle) -> Result<(), EncodingError> {
         for word in self.0.iter() {
             do_encode_word( &*word, heandle, Some( EncodedWordContext::Phrase ) )?;
         }
@@ -91,7 +100,7 @@ impl EncodableInHeader for  Phrase {
 
 #[cfg(test)]
 mod test {
-    use common::utils::HeaderTryFrom;
+    use ::HeaderTryFrom;
     use super::Phrase;
 
     ec_test!{ simple, {

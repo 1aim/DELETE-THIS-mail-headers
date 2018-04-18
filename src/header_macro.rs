@@ -89,7 +89,7 @@ macro_rules! def_headers {
                 const CONTEXTUAL_VALIDATOR:
                     Option<
                         fn(&$crate::map::HeaderMap)
-                        -> $crate::__common::error::Result<()>
+                        -> Result<(), $crate::error::HeaderValidationError>
                     > =
                         def_headers!{ _PRIV_mk_validator $validator };
             }
@@ -114,7 +114,7 @@ macro_rules! def_headers {
         #[test]
         fn $tn() {
             use std::collections::HashSet;
-            use $crate::__common::codec::EncodableInHeader;
+            use $crate::__common::encoder::EncodableInHeader;
 
             let mut name_set = HashSet::new();
             for name in HEADER_NAMES {

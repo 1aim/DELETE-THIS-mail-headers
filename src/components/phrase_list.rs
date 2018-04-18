@@ -1,11 +1,12 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::Result;
-use common::codec::{EncodableInHeader, EncodeHandle};
-use vec1::Vec1;
-use common::utils::{ HeaderTryFrom, HeaderTryInto };
+use vec1::{Vec1, Size0Error};
 
-use error::ComponentError::PhraseListSize0;
+use common::error::EncodingError;
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
+
 
 use super::Phrase;
 
@@ -25,7 +26,7 @@ impl IntoIterator for PhraseList {
 
 impl EncodableInHeader for  PhraseList {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         sep_for!{ word in self.0.iter();
             sep {
                 //TODO handle this better by collapsing FWS
@@ -50,7 +51,7 @@ impl EncodableInHeader for  PhraseList {
 impl<T> HeaderTryFrom<T> for PhraseList
     where T: HeaderTryInto<Phrase>
 {
-    fn try_from( phrase: T ) -> Result<Self> {
+    fn try_from( phrase: T ) -> Result<Self, ComponentCreationError> {
         let phrase = phrase.try_into()?;
         Ok( PhraseList( Vec1::new( phrase ) ) )
     }
@@ -60,19 +61,22 @@ impl<T> HeaderTryFrom<T> for PhraseList
 impl<T> HeaderTryFrom<Vec<T>> for PhraseList
     where T: HeaderTryInto<Phrase>
 {
-    fn try_from(vec: Vec<T>) -> Result<Self> {
+    fn try_from(vec: Vec<T>) -> Result<Self, ComponentCreationError> {
         try_from_into_iter( vec )
     }
 }
 
-fn try_from_into_iter<IT>( phrases: IT ) -> Result<PhraseList>
+fn try_from_into_iter<IT>( phrases: IT ) -> Result<PhraseList, ComponentCreationError>
     where IT: IntoIterator, IT::Item: HeaderTryInto<Phrase>
 {
     let mut iter = phrases.into_iter();
     let mut vec = if let Some( first) = iter.next() {
         Vec1::new( first.try_into()? )
     } else {
-        bail!(PhraseListSize0);
+        return Err(
+            ComponentCreationError
+            ::from_parent(Size0Error, "PhraseList")
+        );
     };
     for phrase in iter {
         vec.push( phrase.try_into()? );
@@ -88,7 +92,7 @@ macro_rules! impl_header_try_from_array {
         impl<T> HeaderTryFrom<[T; $len]> for PhraseList
             where T: HeaderTryInto<Phrase>
         {
-            fn try_from( vec: [T; $len] ) -> Result<Self> {
+            fn try_from( vec: [T; $len] ) -> Result<Self, ComponentCreationError> {
                 //due to only supporting arrays halfheartedly for now
                 let heapified: Box<[T]> = Box::new(vec);
                 let vecified: Vec<_> = heapified.into();

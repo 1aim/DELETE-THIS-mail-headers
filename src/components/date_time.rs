@@ -1,13 +1,14 @@
 use chrono;
 use soft_ascii_string::SoftAsciiString;
 
-use common::utils::HeaderTryFrom;
-use common::error::Result;
-use common::codec::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::error::EncodingError;
+use ::HeaderTryFrom;
+use ::error::ComponentCreationError;
 
 /// A DateTime header component wrapping chrono::DateTime<chrono::Utc>
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
-pub struct DateTime( chrono::DateTime<chrono::Utc> );
+pub struct DateTime(chrono::DateTime<chrono::Utc>);
 
 impl DateTime {
 
@@ -31,7 +32,7 @@ impl DateTime {
 
 impl EncodableInHeader for DateTime {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         let time = SoftAsciiString::from_string_unchecked(self.to_rfc2822());
         handle.write_str( &*time )?;
         Ok( () )
@@ -45,7 +46,7 @@ impl EncodableInHeader for DateTime {
 impl<TZ> HeaderTryFrom<chrono::DateTime<TZ>> for DateTime
     where TZ: chrono::TimeZone
 {
-    fn try_from(val: chrono::DateTime<TZ>) -> Result<Self> {
+    fn try_from(val: chrono::DateTime<TZ>) -> Result<Self, ComponentCreationError> {
         Ok(Self::new(val))
     }
 }

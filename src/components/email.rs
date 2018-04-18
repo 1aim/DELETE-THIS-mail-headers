@@ -1,11 +1,12 @@
 use std::ops::Deref;
 
+use failure::Fail;
 use soft_ascii_string::SoftAsciiChar;
 
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 use quoted_string::quote_if_needed;
 
-use common::error::Result;
+use common::error::{EncodingError, EncodingErrorKind};
 use common::grammar::{
     is_ascii,
     is_atext,
@@ -13,13 +14,13 @@ use common::grammar::{
     is_ws,
 };
 use common::MailType;
-use common::codec::{EncodeHandle, EncodableInHeader };
-use common::codec::idna;
-use common::utils::{HeaderTryInto, HeaderTryFrom};
-use common::data::{Input, SimpleItem, InnerUtf8 };
-use common::codec::quoted_string::UnquotedDotAtomTextValidator;
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::bind::idna;
+use common::bind::quoted_string::UnquotedDotAtomTextValidator;
 
-use error::ComponentError::{InvalidDomainName, InvalidEmail, InvalidLocalPart};
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::data::{Input, SimpleItem, InnerUtf8 };
+use ::error::ComponentCreationError;
 
 /// an email of the form `local-part@domain`
 /// corresponds to RFC5322 addr-spec, so `<`, `>` padding is _not_
@@ -38,7 +39,7 @@ pub struct LocalPart( Input );
 pub struct Domain( SimpleItem );
 
 impl Email {
-    pub fn new<T: HeaderTryInto<Input>>(email: T) -> Result<Self> {
+    pub fn new<T: HeaderTryInto<Input>>(email: T) -> Result<Self, ComponentCreationError> {
         let email = email.try_into()?.into_shared();
         match email {
             Input( InnerUtf8::Owned( .. ) ) => unreachable!(),
@@ -46,7 +47,9 @@ impl Email {
                 //1. ownify Input
                 //2. get 2 sub shares split befor/after @
                 let index = shared.find( "@" )
-                    .ok_or_else( || { error!(InvalidEmail(shared.to_string())) })?;
+                    .ok_or_else(|| {
+                        ComponentCreationError::new_with_str("Email", shared.to_string())
+                    })?;
 
                 let left = shared.clone().map( |all| &all[..index] );
                 let local_part = LocalPart::try_from( Input( InnerUtf8::Shared( left ) ) )?;
@@ -60,19 +63,19 @@ impl Email {
 }
 
 impl<'a> HeaderTryFrom<&'a str> for Email {
-    fn try_from( email: &str ) -> Result<Self> {
+    fn try_from( email: &str ) -> Result<Self, ComponentCreationError> {
         Email::new(email)
     }
 }
 
 impl HeaderTryFrom<String> for Email {
-    fn try_from( email: String ) -> Result<Self> {
+    fn try_from( email: String ) -> Result<Self, ComponentCreationError> {
         Email::new(email)
     }
 }
 
 impl HeaderTryFrom<Input> for Email {
-    fn try_from( email: Input ) -> Result<Self> {
+    fn try_from( email: Input ) -> Result<Self, ComponentCreationError> {
         Email::new(email)
     }
 }
@@ -80,7 +83,7 @@ impl HeaderTryFrom<Input> for Email {
 
 impl EncodableInHeader for  Email {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         self.local_part.encode( handle )?;
         handle.write_char( SoftAsciiChar::from_char_unchecked('@') )?;
         self.domain.encode( handle )?;
@@ -96,7 +99,7 @@ impl<T> HeaderTryFrom<T> for LocalPart
     where T: HeaderTryInto<Input>
 {
 
-    fn try_from( input: T ) -> Result<Self> {
+    fn try_from( input: T ) -> Result<Self, ComponentCreationError> {
         Ok( LocalPart( input.try_into()? ) )
     }
 
@@ -104,17 +107,21 @@ impl<T> HeaderTryFrom<T> for LocalPart
 
 impl EncodableInHeader for LocalPart {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         let input: &str = &*self.0;
         let mail_type = handle.mail_type();
 
         let mut validator = UnquotedDotAtomTextValidator::new(mail_type);
 
-        let res = if mail_type.is_internationalized() {
-            quote_if_needed::<MimeSpec<Internationalized, Modern>, _>(input, &mut validator)
-        } else {
-            quote_if_needed::<MimeSpec<Ascii, Modern>, _>(input, &mut validator)
-        }.map_err(|_qs_err| error!(InvalidLocalPart(input.into())))?;
+        let res =
+            if mail_type.is_internationalized() {
+                quote_if_needed::<MimeSpec<Internationalized, Modern>, _>(input, &mut validator)
+            } else {
+                quote_if_needed::<MimeSpec<Ascii, Modern>, _>(input, &mut validator)
+            }.map_err(|err| EncodingError
+                ::from(err.context(EncodingErrorKind::Malformed))
+                .with_str_context(input)
+            )?;
 
 
         handle.mark_fws_pos();
@@ -143,7 +150,7 @@ impl Deref for LocalPart {
 impl<T> HeaderTryFrom<T> for Domain
     where T: HeaderTryInto<Input>
 {
-    fn try_from( input: T ) -> Result<Self> {
+    fn try_from( input: T ) -> Result<Self, ComponentCreationError> {
         let input = input.try_into()?;
         let item =
             match Domain::check_domain( input.as_str() )? {
@@ -160,10 +167,10 @@ impl<T> HeaderTryFrom<T> for Domain
 }
 
 impl Domain {
-    //SAFETY:
+    //CONSTRAINT:
     //  the function is only allowed to return MailType::Ascii
     //  if the domain is actually ascii
-    fn check_domain( domain: &str ) -> Result<MailType> {
+    fn check_domain( domain: &str ) -> Result<MailType, ComponentCreationError> {
         let mut ascii = true;
         if domain.starts_with("[") && domain.ends_with("]") {
             //check domain-literal
@@ -173,7 +180,9 @@ impl Domain {
             for char in domain.chars() {
                 if ascii { ascii = is_ascii( char ) }
                 if !( is_dtext( char, MailType::Internationalized) || is_ws( char ) ) {
-                    bail!(InvalidDomainName(domain.to_owned()));
+                    let mut err = ComponentCreationError::new("Domain");
+                    err.set_str_context(domain);
+                    return Err(err);
                 }
             }
         } else {
@@ -186,7 +195,9 @@ impl Domain {
                 if char == '.' && dot_alowed {
                     dot_alowed = false;
                 } else if !is_atext( char, MailType::Internationalized ) {
-                    bail!(InvalidDomainName(domain.to_owned()));
+                    let mut err = ComponentCreationError::new("Domain");
+                    err.set_str_context(domain);
+                    return Err(err);
                 } else {
                     dot_alowed = true;
                 }
@@ -202,7 +213,7 @@ impl Domain {
 
 impl EncodableInHeader for  Domain {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
         match self.0 {
             SimpleItem::Ascii( ref ascii ) => {
@@ -236,7 +247,7 @@ impl Deref for Domain {
 
 #[cfg(test)]
 mod test {
-    use common::codec::{ Encoder, VecBodyBuf};
+    use common::encoder::{ Encoder, VecBodyBuf};
     use super::*;
 
     #[test]

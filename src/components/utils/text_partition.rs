@@ -1,8 +1,10 @@
-use common::error::Result;
 use common::grammar::{is_vchar, is_ws};
 use common::MailType;
 
-use error::ComponentError::NeedAtLastOneVCHAR;
+
+#[derive(Copy, Clone, Debug, Fail, PartialEq, Eq, Hash)]
+#[fail(display = "text need to contain at last one vchar")]
+pub struct PartitionError;
 
 #[derive(Copy, Clone)]
 pub enum Partition<'a> {
@@ -14,7 +16,7 @@ pub enum Partition<'a> {
 #[derive(Clone, Copy, PartialEq)]
 enum Type { SPACE, VCHAR }
 
-pub fn partition<'a>( text: &'a str ) -> Result< Vec< Partition<'a> > > {
+pub fn partition<'a>( text: &'a str ) -> Result<Vec<Partition<'a>>, PartitionError> {
     use self::Type::*;
 
     if text.len() == 0 {
@@ -45,7 +47,8 @@ pub fn partition<'a>( text: &'a str ) -> Result< Vec< Partition<'a> > > {
                 current_type = SPACE
             }
         } else {
-            bail!(NeedAtLastOneVCHAR(text.to_owned()));
+            //TODO look into this error case and especially PartitionError's Display impl
+            return Err(PartitionError);
         }
     }
 

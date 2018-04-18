@@ -5,13 +5,10 @@ use soft_ascii_string::{SoftAsciiStr,SoftAsciiChar};
 use mime::{MediaType as _MediaType, Name, AnyMediaType};
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 
-use common::error::Result;
-use common::utils::HeaderTryFrom;
-use common::codec::{EncodeHandle, EncodableInHeader};
-use error::ComponentError::{
-    ParsingMediaTypeFailed,
-    InvalidMediaTypeParts,
-};
+use common::error::EncodingError;
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use ::HeaderTryFrom;
+use ::error::ComponentCreationError;
 
 
 #[derive(Debug, Clone)]
@@ -22,32 +19,46 @@ pub struct MediaType {
 
 impl MediaType {
 
-    pub fn parse(media_type: &str) -> Result<Self> {
+    pub fn parse(media_type: &str) -> Result<Self, ComponentCreationError> {
         let media_type = InternationalizedMediaType
             ::parse(media_type)
-            .map_err(|e| error!(ParsingMediaTypeFailed(e.to_owned())))?;
+            .map_err(|e|
+                ComponentCreationError
+                ::from_parent(e.to_owned(), "MediaType")
+                .with_str_context(media_type)
+            )?;
 
         Ok(media_type.into())
     }
 
-    pub fn new<T, ST>(type_: T, subtype: ST) -> Result<Self>
+    pub fn new<T, ST>(type_: T, subtype: ST) -> Result<Self, ComponentCreationError>
         where T: AsRef<str>, ST: AsRef<str>
     {
         let media_type = AsciiMediaType
-            ::new(type_, subtype)
-            .map_err(|e| error!(InvalidMediaTypeParts(e)))?;
+            ::new(type_.as_ref(), subtype.as_ref())
+            .map_err(|e|
+                ComponentCreationError
+                ::from_parent(e, "MediaType")
+                .with_str_context(format!("{}/{}", type_.as_ref(), subtype.as_ref()))
+            )?;
 
         Ok(media_type.into())
     }
 
-    pub fn new_with_params<T, ST, I, IV, IN>(type_: T, subtype: ST, params: I) -> Result<Self>
+    pub fn new_with_params<T, ST, I, IV, IN>(type_: T, subtype: ST, params: I)
+        -> Result<Self, ComponentCreationError>
         where T: AsRef<str>, ST: AsRef<str>,
               I: IntoIterator<Item=(IV, IN)>,
               IV: AsRef<str>, IN: AsRef<str>
     {
         let media_type = InternationalizedMediaType
-            ::new_with_params(type_, subtype, params)
-            .map_err(|e| error!(InvalidMediaTypeParts(e)))?;
+            ::new_with_params(type_.as_ref(), subtype.as_ref(), params)
+            .map_err(|e|
+                ComponentCreationError
+                ::from_parent(e, "MediaType")
+                .with_str_context(format!("{}/{} <params-eluded>",
+                    type_.as_ref(), subtype.as_ref()))
+            )?;
 
         Ok(media_type.into())
     }
@@ -108,19 +119,19 @@ impl Into<InternationalizedMediaType> for MediaType {
 }
 
 impl HeaderTryFrom<AsciiMediaType> for MediaType {
-    fn try_from(mime: AsciiMediaType) -> Result<Self> {
+    fn try_from(mime: AsciiMediaType) -> Result<Self, ComponentCreationError> {
         Ok(mime.into())
     }
 }
 
 impl HeaderTryFrom<InternationalizedMediaType> for MediaType {
-    fn try_from(mime: InternationalizedMediaType) -> Result<Self> {
+    fn try_from(mime: InternationalizedMediaType) -> Result<Self, ComponentCreationError> {
         Ok(mime.into())
     }
 }
 
 impl<'a> HeaderTryFrom<&'a str> for MediaType {
-    fn try_from(media_type: &'a str) -> Result<Self> {
+    fn try_from(media_type: &'a str) -> Result<Self, ComponentCreationError> {
         Self::parse(media_type)
     }
 }
@@ -128,7 +139,7 @@ impl<'a> HeaderTryFrom<&'a str> for MediaType {
 
 impl EncodableInHeader for  MediaType {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         let no_recheck_needed = handle.mail_type().is_internationalized() || !self.might_need_utf8;
 
         //type and subtype are always ascii

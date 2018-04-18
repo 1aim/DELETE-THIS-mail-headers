@@ -1,8 +1,9 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::Result;
-use common::utils::{HeaderTryFrom, HeaderTryInto};
-use common::codec::{EncodableInHeader, EncodeHandle};
+use common::error::EncodingError;
+use common::encoder::{EncodeHandle, EncodableInHeader};
+use ::{HeaderTryFrom, HeaderTryInto};
+use ::error::ComponentCreationError;
 use super::Email;
 
 
@@ -10,7 +11,7 @@ use super::Email;
 pub struct Path(pub Option<Email>);
 
 impl HeaderTryFrom<Option<Email>> for Path {
-    fn try_from(opt_mail: Option<Email>) -> Result<Self> {
+    fn try_from(opt_mail: Option<Email>) -> Result<Self, ComponentCreationError> {
         Ok( Path( opt_mail ) )
     }
 }
@@ -18,14 +19,14 @@ impl HeaderTryFrom<Option<Email>> for Path {
 impl<T> HeaderTryFrom<T> for Path
     where T: HeaderTryInto<Email>
 {
-    fn try_from(opt_mail: T) -> Result<Self> {
+    fn try_from(opt_mail: T) -> Result<Self, ComponentCreationError> {
         Ok( Path( Some( opt_mail.try_into()? ) ) )
     }
 }
 
 impl EncodableInHeader for  Path {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<()> {
+    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
         handle.write_char(SoftAsciiChar::from_char_unchecked('<'))?;
         if let Some( mail ) = self.0.as_ref() {
