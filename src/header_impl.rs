@@ -12,13 +12,13 @@ def_headers! {
     /// (rfc5322)
     Date,            maxOne, unchecked { "Date"          },  DateTime,       None,
     /// (rfc5322)
-    From,            maxOne, unchecked { "From"          },  MailboxList,    validator_from,
+    _From,            maxOne, unchecked { "From"          },  MailboxList,    validator_from,
     /// (rfc5322)
     Sender,          maxOne, unchecked { "Sender"        },  Mailbox,        None,
     /// (rfc5322)
     ReplyTo,         maxOne, unchecked { "Reply-To"      },  MailboxList,    None,
     /// (rfc5322)
-    To,              maxOne, unchecked { "To"            },  MailboxList,    None,
+    _To,              maxOne, unchecked { "To"            },  MailboxList,    None,
     /// (rfc5322)
     Cc,              maxOne, unchecked { "Cc"            },  MailboxList,    None,
     /// (rfc5322)
@@ -120,7 +120,7 @@ mod validators {
     use ::{ HeaderMap, Header, HeaderName };
     use ::error::HeaderValidationError;
 
-    use super::{ From, ResentFrom, Sender, ResentSender, ResentDate };
+    use super::{ _From, ResentFrom, Sender, ResentSender, ResentDate };
 
 
     pub fn from(map: &HeaderMap) -> Result<(), HeaderValidationError> {
@@ -131,7 +131,7 @@ mod validators {
         // whatever header put them in has also put in
         // this bit of validation )
         let needs_sender =
-            map.get(From).map(|bodies|
+            map.get(_From).map(|bodies|
                 bodies.filter_map(|res| res.ok()).any(|list| list.len() > 1 )
             ).unwrap_or(false);
 
@@ -187,14 +187,14 @@ mod test {
     use components::DateTime;
     use ::{
         HeaderMap,
-        From, ResentFrom, ResentTo, ResentDate,
+        _From, ResentFrom, ResentTo, ResentDate,
         Sender, ResentSender, Subject
     };
 
     #[test]
     fn from_validation_normal() {
         let mut map = HeaderMap::new();
-        map.insert(From, [("Mr. Peté", "pete@nixmail.nixdomain")]).unwrap();
+        map.insert(_From, [("Mr. Peté", "pete@nixmail.nixdomain")]).unwrap();
         map.insert(Subject, "Ok").unwrap();
 
         assert_ok!(map.use_contextual_validators());
@@ -202,7 +202,7 @@ mod test {
     #[test]
     fn from_validation_multi_err() {
         let mut map = HeaderMap::new();
-        map.insert(From, (
+        map.insert(_From, (
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
         )).unwrap();
@@ -214,7 +214,7 @@ mod test {
     #[test]
     fn from_validation_multi_ok() {
         let mut map = HeaderMap::new();
-        map.insert(From, (
+        map.insert(_From, (
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
         )).unwrap();
