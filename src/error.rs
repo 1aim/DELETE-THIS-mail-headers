@@ -63,6 +63,12 @@ impl From<BuildInValidationError> for HeaderValidationError {
     }
 }
 
+impl From<Context<BuildInValidationError>> for HeaderValidationError {
+    fn from(err: Context<BuildInValidationError>) -> Self {
+        HeaderValidationError::BuildIn(err)
+    }
+}
+
 #[derive(Copy, Clone, Debug, Fail, PartialEq, Eq, Hash)]
 pub enum BuildInValidationError {
     #[fail(display = "From field contained multiple addresses but no Sender field was set")]
