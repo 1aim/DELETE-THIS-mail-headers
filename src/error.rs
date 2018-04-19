@@ -77,6 +77,11 @@ pub enum BuildInValidationError {
     #[fail(display = "From field missing")]
     NoFrom,
 
+    // theoretically content type is optional practically it's recommended even
+    // for plain text mails, to indicate that they are indeed plain text mails
+    #[fail(display = "Content-Type field missing")]
+    NoContentType,
+
     #[fail(display = "Content-Type header misses boundary parameter in multipart body")]
     NoMultipartBoundary,
 
