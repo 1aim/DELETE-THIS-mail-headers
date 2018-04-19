@@ -57,6 +57,12 @@ pub enum HeaderValidationError {
     Custom(FError)
 }
 
+impl From<BuildInValidationError> for HeaderValidationError {
+    fn from(err: BuildInValidationError) -> Self {
+        HeaderValidationError::BuildIn(Context::new(err))
+    }
+}
+
 #[derive(Copy, Clone, Debug, Fail, PartialEq, Eq, Hash)]
 pub enum BuildInValidationError {
     #[fail(display = "From field contained multiple addresses but no Sender field was set")]
@@ -70,6 +76,13 @@ pub enum BuildInValidationError {
 
     #[fail(display = "From field missing")]
     NoFrom,
+
+    #[fail(display = "Content-Type header misses boundary parameter in multipart body")]
+    NoMultipartBoundary,
+
+    #[fail(display = "multipart bodies need to contain at last one part (/sub-body)")]
+    EmptyMultipartBody,
+
 }
 
 macro_rules! header_validation_bail {
