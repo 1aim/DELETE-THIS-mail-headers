@@ -5,7 +5,7 @@ use soft_ascii_string::SoftAsciiChar;
 use vec1::Vec1;
 
 use common::error::EncodingError;
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use ::data::{ Input, SimpleItem };
@@ -46,7 +46,7 @@ impl<T> HeaderTryFrom<T> for MessageID
 
 impl EncodableInHeader for  MessageID {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
         handle.write_char( SoftAsciiChar::from_char_unchecked('<') )?;
         match self.message_id {
@@ -70,7 +70,7 @@ deref0!{ +mut MessageIDList => Vec1<MessageID> }
 
 impl EncodableInHeader for  MessageIDList {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         for msg_id in self.iter() {
             msg_id.encode( handle )?;
         }
@@ -88,7 +88,7 @@ impl EncodableInHeader for  MessageIDList {
 #[cfg(test)]
 mod test {
     use common::MailType;
-    use common::encoder::{ Encoder, VecBodyBuf };
+    use common::encoder::EncodingBuffer;
     use super::*;
 
     ec_test!{ simple, {
@@ -113,8 +113,8 @@ mod test {
 
     #[test]
     fn utf8_fails() {
-        let mut encoder = Encoder::<VecBodyBuf>::new(MailType::Ascii);
-        let mut handle = encoder.encode_handle();
+        let mut encoder = EncodingBuffer::new(MailType::Ascii);
+        let mut handle = encoder.writer();
         let mid = MessageID::try_from( "abc@øpunny.code" ).unwrap();
         assert_err!(mid.encode( &mut handle ));
         handle.undo_header();

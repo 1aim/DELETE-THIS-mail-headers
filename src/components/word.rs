@@ -3,7 +3,7 @@ use quoted_string;
 use common::grammar::is_atext;
 use common::grammar::encoded_word::EncodedWordContext;
 use common::error::{EncodingError, EncodingErrorKind};
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use common::bind::encoded_word::{EncodedWordEncoding, WriterWrapper};
 use common::bind::quoted_string::{MailQsSpec, InternationalizedMailQsSpec};
 use ::{HeaderTryFrom, HeaderTryInto};
@@ -63,7 +63,7 @@ impl Word {
 /// NOTE: != encoded-word, through it might create an encoded-word
 pub fn do_encode_word<'a,'b: 'a>(
     word: &'a Word,
-    handle: &'a mut EncodeHandle<'b>,
+    handle: &'a mut EncodingWriter<'b>,
     ecw_ctx: Option<EncodedWordContext>,
 ) -> Result<(), EncodingError> {
 
@@ -118,7 +118,7 @@ mod test {
     use std::mem;
 
     use common::MailType;
-    use common::encoder::{ Encoder, VecBodyBuf};
+    use common::encoder::EncodingBuffer;
     use common::encoder::TraceToken::*;
     use common::encoder::simplify_trace_tokens;
 
@@ -128,7 +128,7 @@ mod test {
 
     ec_test!{encode_pseudo_encoded_words, {
         let word = Word::try_from( "=?" )?;
-        enc_closure!(move |handle: &mut EncodeHandle| {
+        enc_closure!(move |handle: &mut EncodingWriter| {
             do_encode_word( &word, handle, Some( EncodedWordContext::Text ) )
         })
     } => ascii => [
@@ -137,7 +137,7 @@ mod test {
 
     ec_test!{encode_word, {
         let word = Word::try_from( "a↑b" )?;
-        enc_closure!(move |handle: &mut EncodeHandle| {
+        enc_closure!(move |handle: &mut EncodingWriter| {
             do_encode_word( &word, handle, Some( EncodedWordContext::Text ) )
         })
     } => ascii => [
@@ -147,8 +147,8 @@ mod test {
 
     #[test]
     fn encode_fails() {
-        let mut encoder = Encoder::<VecBodyBuf>::new(MailType::Ascii);
-        let mut handle = encoder.encode_handle();
+        let mut encoder = EncodingBuffer::new(MailType::Ascii);
+        let mut handle = encoder.writer();
         let word = Word::try_from( "a↑b" ).unwrap();
         assert_err!(do_encode_word( &word, &mut handle, None ));
         handle.undo_header();
@@ -157,7 +157,7 @@ mod test {
 
     ec_test!{quoted_fallback, {
         let word = Word::try_from( "a\"b" )?;
-        enc_closure!(move |handle: &mut EncodeHandle| {
+        enc_closure!(move |handle: &mut EncodingWriter| {
             do_encode_word( &word, handle, None )
         })
     } => ascii => [
@@ -205,14 +205,14 @@ mod test {
         ];
 
         for &( ref word, ref expection) in words.iter() {
-            let mut encoder = Encoder::<VecBodyBuf>::new(MailType::Ascii);
+            let mut encoder = EncodingBuffer::new(MailType::Ascii);
             {
-                let mut handle = encoder.encode_handle();
+                let mut handle = encoder.writer();
                 do_encode_word( word, &mut handle, None ).unwrap();
                 mem::forget(handle);
             }
             assert_eq!(
-                &simplify_trace_tokens(encoder.trace.into_iter().skip(1)),
+                &simplify_trace_tokens(encoder.trace.into_iter()),
                 expection
             );
         }

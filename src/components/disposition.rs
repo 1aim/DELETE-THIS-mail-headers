@@ -9,7 +9,7 @@ use mime::spec::{MimeSpec, Ascii, Modern, Internationalized};
 
 
 use common::error::{EncodingError, EncodingErrorKind};
-use common::encoder::{EncodableInHeader, EncodeHandle};
+use common::encoder::{EncodableInHeader, EncodingWriter};
 use common::utils::FileMeta;
 use ::HeaderTryFrom;
 use ::error::ComponentCreationError;
@@ -82,7 +82,7 @@ impl<'a> HeaderTryFrom<&'a str> for Disposition {
 //  this are: ContentType and ContentDisposition for now
 impl EncodableInHeader for DispositionParameters {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         let mut params = Vec::<(&str, Cow<str>)>::new();
         if let Some(filename) = self.file_name.as_ref() {
             params.push(("filename", Cow::Borrowed(filename)));
@@ -133,7 +133,7 @@ impl EncodableInHeader for DispositionParameters {
 
 impl EncodableInHeader for Disposition {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         use self::DispositionKind::*;
         match self.kind {
             Inline => {

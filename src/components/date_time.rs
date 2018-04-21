@@ -1,7 +1,7 @@
 use chrono;
 use soft_ascii_string::SoftAsciiString;
 
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use common::error::EncodingError;
 use ::HeaderTryFrom;
 use ::error::ComponentCreationError;
@@ -32,7 +32,7 @@ impl DateTime {
 
 impl EncodableInHeader for DateTime {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         let time = SoftAsciiString::from_string_unchecked(self.to_rfc2822());
         handle.write_str( &*time )?;
         Ok( () )

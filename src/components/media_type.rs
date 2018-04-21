@@ -6,7 +6,7 @@ use mime::{MediaType as _MediaType, Name, AnyMediaType};
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 
 use common::error::EncodingError;
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use ::HeaderTryFrom;
 use ::error::ComponentCreationError;
 
@@ -139,7 +139,7 @@ impl<'a> HeaderTryFrom<&'a str> for MediaType {
 
 impl EncodableInHeader for  MediaType {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         let no_recheck_needed = handle.mail_type().is_internationalized() || !self.might_need_utf8;
 
         //type and subtype are always ascii
@@ -178,7 +178,7 @@ impl EncodableInHeader for  MediaType {
 //
 ///// encodes all non ascii parts of a mime turning it into an ascii mime
 /////
-//fn encode_mime(mime: &MediaType, handle: &mut EncodeHandle) -> Result<()> {
+//fn encode_mime(mime: &MediaType, handle: &mut EncodingWriter) -> Result<()> {
 //    //TODO(upstream=mime): this can be simplified with upstem fixes to the mime crate
 //    handle.write_str(SoftAsciiStr::from_str_unchecked(mime.type_().as_str()))?;
 //    handle.write_char(SoftAsciiChar::from_char_unchecked('/'))?;

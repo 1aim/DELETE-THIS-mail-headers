@@ -3,7 +3,7 @@ use soft_ascii_string::SoftAsciiChar;
 use vec1::{Vec1, Size0Error};
 
 use common::error::EncodingError;
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 
@@ -26,11 +26,11 @@ impl IntoIterator for PhraseList {
 
 impl EncodableInHeader for  PhraseList {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         sep_for!{ word in self.0.iter();
             sep {
                 //TODO handle this better by collapsing FWS
-                // <= isn't that allready fixed by FWS+ has content on line in Encoder
+                // <= isn't that allready fixed by FWS+ has content on line in EncodingBuffer
                 //Note that we do not want to write FWS as the following word might contains
                 // a left_padding with a MarkFWS, NowChar, Text " " but a space if fine
                 handle.write_char( SoftAsciiChar::from_char_unchecked(',') )?;

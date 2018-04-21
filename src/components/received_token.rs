@@ -1,7 +1,7 @@
 use soft_ascii_string::SoftAsciiChar;
 
 use common::error::EncodingError;
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 
 use super::word::{ Word, do_encode_word };
 use super::{ Email, Domain };
@@ -16,7 +16,7 @@ pub enum ReceivedToken {
 
 impl EncodableInHeader for  ReceivedToken {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         use self::ReceivedToken::*;
         match *self {
             Word( ref word ) => {
@@ -45,7 +45,7 @@ impl EncodableInHeader for  ReceivedToken {
 mod test {
     use ::HeaderTryFrom;
     use common::MailType;
-    use common::encoder::{Encoder, VecBodyBuf};
+    use common::encoder::EncodingBuffer;
     use super::*;
 
     ec_test!{ a_domain, {
@@ -88,8 +88,8 @@ mod test {
 
     #[test]
     fn no_encoded_word() {
-        let mut encoder = Encoder::<VecBodyBuf>::new( MailType::Ascii );
-        let mut handle = encoder.encode_handle();
+        let mut encoder = EncodingBuffer::new( MailType::Ascii );
+        let mut handle = encoder.writer();
         let input = ReceivedToken::Word( Word::try_from( "↓right" ).unwrap() );
         assert_err!(input.encode( &mut handle ));
         handle.undo_header();

@@ -5,7 +5,7 @@ use soft_ascii_string::SoftAsciiChar;
 
 use common::grammar::is_vchar;
 use common::error::{EncodingError, EncodingErrorKind};
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use common::bind::encoded_word::{EncodedWordEncoding, WriterWrapper};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
@@ -48,7 +48,7 @@ impl<T> HeaderTryFrom<T> for Unstructured
 
 impl EncodableInHeader for  Unstructured {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         let text: &str = &*self.text;
         if text.len() == 0 {
             return Ok( () )
@@ -125,7 +125,7 @@ impl EncodableInHeader for  Unstructured {
 #[cfg(test)]
 mod test {
     use common::MailType;
-    use common::encoder::{Encoder, VecBodyBuf};
+    use common::encoder::EncodingBuffer;
 
     use super::*;
 
@@ -199,9 +199,9 @@ mod test {
 
     #[test]
     fn wsp_only_phrase_fails() {
-        let mut encoder = Encoder::<VecBodyBuf>::new(MailType::Ascii);
+        let mut encoder = EncodingBuffer::new(MailType::Ascii);
         {
-            let mut handle = encoder.encode_handle();
+            let mut handle = encoder.writer();
             let input = Unstructured::try_from( " \t " ).unwrap();
             assert_err!(input.encode( &mut handle ));
             handle.undo_header();

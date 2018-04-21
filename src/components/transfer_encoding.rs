@@ -1,7 +1,7 @@
 use soft_ascii_string::SoftAsciiStr;
 
 use common::error::EncodingError;
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 
 /// The TransferEnecoding header component mainly used by the ContentTransferEncodingHeader.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -29,7 +29,7 @@ impl TransferEncoding {
 
 impl EncodableInHeader for  TransferEncoding {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         handle.write_str( self.repr() )?;
         Ok( () )
     }

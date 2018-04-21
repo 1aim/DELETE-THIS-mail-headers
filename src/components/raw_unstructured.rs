@@ -5,7 +5,7 @@ use soft_ascii_string::SoftAsciiStr;
 
 use common::grammar::is_vchar;
 use common::error::{EncodingError, EncodingErrorKind};
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use ::data::Input;
@@ -62,7 +62,7 @@ impl AsRef<str> for RawUnstructured {
 }
 
 impl EncodableInHeader for RawUnstructured {
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         let mail_type = handle.mail_type();
 
         if !self.text.chars().all(|ch| is_vchar(ch, mail_type)) {

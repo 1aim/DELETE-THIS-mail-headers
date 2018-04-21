@@ -14,7 +14,7 @@ use common::grammar::{
     is_ws,
 };
 use common::MailType;
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use common::bind::idna;
 use common::bind::quoted_string::UnquotedDotAtomTextValidator;
 
@@ -83,7 +83,7 @@ impl HeaderTryFrom<Input> for Email {
 
 impl EncodableInHeader for  Email {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         self.local_part.encode( handle )?;
         handle.write_char( SoftAsciiChar::from_char_unchecked('@') )?;
         self.domain.encode( handle )?;
@@ -107,7 +107,7 @@ impl<T> HeaderTryFrom<T> for LocalPart
 
 impl EncodableInHeader for LocalPart {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         let input: &str = &*self.0;
         let mail_type = handle.mail_type();
 
@@ -213,7 +213,7 @@ impl Domain {
 
 impl EncodableInHeader for  Domain {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
         match self.0 {
             SimpleItem::Ascii( ref ascii ) => {
@@ -247,7 +247,7 @@ impl Deref for Domain {
 
 #[cfg(test)]
 mod test {
-    use common::encoder::{ Encoder, VecBodyBuf};
+    use common::encoder::EncodingBuffer;
     use super::*;
 
     #[test]
@@ -290,8 +290,8 @@ mod test {
 
     #[test]
     fn local_part_utf8_on_ascii() {
-        let mut encoder = Encoder::<VecBodyBuf>::new( MailType::Ascii );
-        let mut handle = encoder.encode_handle();
+        let mut encoder = EncodingBuffer::new( MailType::Ascii );
+        let mut handle = encoder.writer();
         let local = LocalPart::try_from( "Jörn" ).unwrap();
         assert_err!(local.encode( &mut handle ));
         handle.undo_header();

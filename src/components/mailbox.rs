@@ -1,7 +1,7 @@
 use soft_ascii_string::SoftAsciiChar;
 
 use common::error::EncodingError;
-use common::encoder::{EncodableInHeader, EncodeHandle};
+use common::encoder::{EncodableInHeader, EncodingWriter};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 
@@ -94,7 +94,7 @@ impl<P, E> HeaderTryFrom<(P, E)> for Mailbox
 
 impl EncodableInHeader for  Mailbox {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         if let Some( display_name ) = self.display_name.as_ref() {
             display_name.encode( handle )?;
             handle.write_fws();

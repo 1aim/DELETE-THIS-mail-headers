@@ -2,7 +2,7 @@ use vec1::{Vec1, Size0Error};
 
 use common::grammar::encoded_word::EncodedWordContext;
 use common::error::EncodingError;
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
@@ -85,7 +85,7 @@ impl EncodableInHeader for  Phrase {
 
     //FEATURE_TODO(warn_on_bad_phrase): warn if the phrase contains chars it should not
     //  but can contain due to encoding, e.g. ascii CTL's
-    fn encode(&self, heandle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, heandle: &mut EncodingWriter) -> Result<(), EncodingError> {
         for word in self.0.iter() {
             do_encode_word( &*word, heandle, Some( EncodedWordContext::Phrase ) )?;
         }

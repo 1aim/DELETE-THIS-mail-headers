@@ -3,7 +3,7 @@ use vec1::Vec1;
 use soft_ascii_string::SoftAsciiChar;
 
 use common::error::EncodingError;
-use common::encoder::{EncodableInHeader, EncodeHandle};
+use common::encoder::{EncodableInHeader, EncodingWriter};
 use ::{ HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 
@@ -34,7 +34,7 @@ impl IntoIterator for MailboxList {
 
 impl EncodableInHeader for  OptMailboxList {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
        encode_list( self.0.iter(), handle )
     }
 
@@ -201,7 +201,7 @@ impl<T> HeaderTryFrom<Vec<T>> for OptMailboxList
 
 impl EncodableInHeader for  MailboxList {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         encode_list( self.0.iter(), handle )
     }
 
@@ -210,7 +210,7 @@ impl EncodableInHeader for  MailboxList {
     }
 }
 
-fn encode_list<'a, I>(list_iter: I, handle: &mut EncodeHandle) -> Result<(), EncodingError>
+fn encode_list<'a, I>(list_iter: I, handle: &mut EncodingWriter) -> Result<(), EncodingError>
     where I: Iterator<Item=&'a Mailbox>
 {
     sep_for!{ mailbox in list_iter;

@@ -1,7 +1,7 @@
 use soft_ascii_string::SoftAsciiChar;
 
 use common::error::EncodingError;
-use common::encoder::{EncodeHandle, EncodableInHeader};
+use common::encoder::{EncodingWriter, EncodableInHeader};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use super::Email;
@@ -26,7 +26,7 @@ impl<T> HeaderTryFrom<T> for Path
 
 impl EncodableInHeader for  Path {
 
-    fn encode(&self, handle: &mut EncodeHandle) -> Result<(), EncodingError> {
+    fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
         handle.write_char(SoftAsciiChar::from_char_unchecked('<'))?;
         if let Some( mail ) = self.0.as_ref() {

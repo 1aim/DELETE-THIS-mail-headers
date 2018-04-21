@@ -459,7 +459,7 @@ mod test {
     use soft_ascii_string::SoftAsciiStr;
 
     use common::error::{EncodingError, EncodingErrorKind};
-    use common::encoder::{EncodableInHeader, EncodeHandle};
+    use common::encoder::{EncodableInHeader, EncodingWriter};
 
     use ::HeaderTryFrom;
     use ::error::{ComponentCreationError, HeaderValidationError};
@@ -482,7 +482,7 @@ mod test {
         }
     }
     impl EncodableInHeader for OtherComponent {
-        fn encode(&self, _encoder:  &mut EncodeHandle) -> Result<(), EncodingError> {
+        fn encode(&self, _encoder:  &mut EncodingWriter) -> Result<(), EncodingError> {
             Err(EncodingError::from(
                     EncodingErrorKind::Other { kind: "encoding is not implemented" }))
         }
