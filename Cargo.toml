@@ -1,13 +1,13 @@
 [package]
 name = "mail-headers"
-version = "0.0.1"
+description = "[internal/mail-api] header parts for the mail-api crate (inkl. header map and standard header impl)"
+version = "0.2.0"
 authors = ["Philipp Korber <philippkorber@gmail.com>"]
-description = "TODO"
 documentation = "https://docs.rs/mail-headers"
 keywords = []
 categories = []
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/1aim/mail-codec"
+repository = "https://github.com/1aim/mail-headers"
 
 [dependencies]
 failure = "0.1.1"
