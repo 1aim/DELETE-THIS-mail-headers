@@ -1,7 +1,7 @@
 
 use nom::IResult;
 
-use soft_ascii_string::SoftAsciiChar;
+use soft_ascii_string::{SoftAsciiChar, SoftAsciiStr, SoftAsciiString};
 use vec1::Vec1;
 
 use common::error::EncodingError;
@@ -10,6 +10,13 @@ use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use ::data::{ Input, SimpleItem };
 
+/// # Implementation Details
+///
+/// This is used for both message-id/content-id, but
+/// depending on usage and support for obsolete parts there
+/// are two "kind" of id's one which allows  FWS(/CFWS) in
+/// some places and one which doesn't. This implementation
+/// only supports the later one.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct MessageID {
     message_id: SimpleItem
@@ -17,6 +24,33 @@ pub struct MessageID {
 
 
 impl MessageID {
+
+    pub fn new(left_part: &SoftAsciiStr, right_part: &SoftAsciiStr)
+        -> Result<Self, ComponentCreationError>
+    {
+        use self::{parser_parts as parser};
+
+        match parser::id_left(left_part.as_str()) {
+            IResult::Done( "", _part ) => {},
+            _other => {
+                return Err(ComponentCreationError::new_with_str(
+                    "MessageID", format!("{}@{}", left_part, right_part)));
+            }
+        }
+
+        match parser::id_right(right_part.as_str()) {
+            IResult::Done( "", _part ) => {},
+            _other => {
+                return Err(ComponentCreationError::new_with_str(
+                    "MessageID", format!("{}@{}", left_part, right_part)));
+            }
+        }
+
+        let id = SoftAsciiString::from_string_unchecked(
+            format!("{}@{}", left_part, right_part));
+        let item = SimpleItem::Ascii(id.into());
+        Ok(MessageID { message_id: item })
+    }
 
     //FIXME make into AsRef<str> for MessageID
     pub fn as_str( &self ) -> &str {
@@ -83,60 +117,6 @@ impl EncodableInHeader for  MessageIDList {
 }
 
 
-//NOTE for parsing mails we have to make sure to _require_ '<>' around the email
-
-#[cfg(test)]
-mod test {
-    use common::MailType;
-    use common::encoder::EncodingBuffer;
-    use super::*;
-
-    ec_test!{ simple, {
-        MessageID::try_from( "affen@haus" )?
-    } => ascii => [
-        MarkFWS,
-        // there are two "context" one which allows FWS inside (defined = email)
-        // and one which doesn't for simplicity we use the later every where
-        // especially because message ids without a `@domain.part` are quite
-        // common
-        Text "<affen@haus>",
-        MarkFWS
-    ]}
-
-    ec_test!{ utf8, {
-        MessageID::try_from( "↓@↑.utf8")?
-    } => utf8 => [
-        MarkFWS,
-        Text "<↓@↑.utf8>",
-        MarkFWS
-    ]}
-
-    #[test]
-    fn utf8_fails() {
-        let mut encoder = EncodingBuffer::new(MailType::Ascii);
-        let mut handle = encoder.writer();
-        let mid = MessageID::try_from( "abc@øpunny.code" ).unwrap();
-        assert_err!(mid.encode( &mut handle ));
-        handle.undo_header();
-    }
-
-    ec_test!{ multipls, {
-        let fst = MessageID::try_from( "affen@haus" )?;
-        let snd = MessageID::try_from( "obst@salat" )?;
-        MessageIDList( vec1! [
-            fst,
-            snd
-        ])
-    } => ascii => [
-        MarkFWS,
-        Text "<affen@haus>",
-        MarkFWS,
-        MarkFWS,
-        Text "<obst@salat>",
-        MarkFWS,
-    ]}
-}
-
 mod parser_parts {
     use nom::IResult;
     use common::grammar::{is_atext, is_dtext};
@@ -151,12 +131,11 @@ mod parser_parts {
         )
     }
 
-    #[inline(always)]
-    pub fn id_left( input: &str ) -> IResult<&str, &str> {
-        dot_atom_text( input )
+    pub fn id_left(input: &str) -> IResult<&str, &str> {
+        dot_atom_text(input)
     }
 
-    pub fn id_right( input: &str ) -> IResult<&str, &str> {
+    pub fn id_right(input: &str) -> IResult<&str, &str> {
         alt!(
             input,
             no_fold_literal |
@@ -243,5 +222,65 @@ mod parser_parts {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use common::MailType;
+    use common::encoder::EncodingBuffer;
+    use super::*;
+
+    ec_test!{ new, {
+        MessageID::new(
+            SoftAsciiStr::from_str_unchecked("just.me"),
+            SoftAsciiStr::from_str_unchecked("[127.0.0.1]")
+        )?
+    } => ascii => [
+        MarkFWS,
+        Text "<just.me@[127.0.0.1]>",
+        MarkFWS
+    ]}
+
+    ec_test!{ simple, {
+        MessageID::try_from( "affen@haus" )?
+    } => ascii => [
+        MarkFWS,
+        // there are two "context" one which allows FWS inside (defined = email)
+        // and one which doesn't for simplicity we use the later every where
+        Text "<affen@haus>",
+        MarkFWS
+    ]}
+
+    ec_test!{ utf8, {
+        MessageID::try_from( "↓@↑.utf8")?
+    } => utf8 => [
+        MarkFWS,
+        Text "<↓@↑.utf8>",
+        MarkFWS
+    ]}
+
+    #[test]
+    fn utf8_fails() {
+        let mut encoder = EncodingBuffer::new(MailType::Ascii);
+        let mut handle = encoder.writer();
+        let mid = MessageID::try_from( "abc@øpunny.code" ).unwrap();
+        assert_err!(mid.encode( &mut handle ));
+        handle.undo_header();
+    }
+
+    ec_test!{ multipls, {
+        let fst = MessageID::try_from( "affen@haus" )?;
+        let snd = MessageID::try_from( "obst@salat" )?;
+        MessageIDList( vec1! [
+            fst,
+            snd
+        ])
+    } => ascii => [
+        MarkFWS,
+        Text "<affen@haus>",
+        MarkFWS,
+        MarkFWS,
+        Text "<obst@salat>",
+        MarkFWS,
+    ]}
+}
 
 
