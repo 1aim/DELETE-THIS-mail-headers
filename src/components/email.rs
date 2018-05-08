@@ -39,6 +39,11 @@ pub struct LocalPart( Input );
 pub struct Domain( SimpleItem );
 
 impl Email {
+
+    pub fn check_if_internationalized(&self) -> bool {
+        self.local_part.check_if_internationalized()
+    }
+
     pub fn new<T: HeaderTryInto<Input>>(email: T) -> Result<Self, ComponentCreationError> {
         let email = email.try_into()?.into_shared();
         match email {
@@ -59,6 +64,13 @@ impl Email {
                 Ok( Email { local_part, domain } )
             }
         }
+    }
+}
+
+impl LocalPart {
+
+    pub fn check_if_internationalized(&self) -> bool {
+        self.0.as_str().bytes().any(|b| b > 0x7f)
     }
 }
 
