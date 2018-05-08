@@ -94,6 +94,18 @@ pub enum BuildInValidationError {
     #[fail(display = "multipart bodies need to contain at last one part (/sub-body)")]
     EmptyMultipartBody,
 
+    /// Indicates the `To` header is missing
+    ///
+    /// While rfc5322 does not require a `To` header
+    /// field, it's a sane choice to reject mails without
+    /// it.
+    ///
+    /// This error is _not_ used by the general validation,
+    /// provided with this crate, but can be used e.g. by
+    /// external libraries which do generate mails.
+    #[fail(display = "missing To header field")]
+    NoTo,
+
 }
 
 macro_rules! header_validation_bail {
