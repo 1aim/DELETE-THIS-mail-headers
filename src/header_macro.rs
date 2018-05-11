@@ -131,7 +131,7 @@ macro_rules! def_headers {
             )+
             for name in HEADER_NAMES {
                 let res = $crate::HeaderName::new(
-                    $crate::__SoftAsciiStr::from_str(name).unwrap()
+                    $crate::soft_ascii_string::SoftAsciiStr::from_str(name).unwrap()
                 );
                 if res.is_err() {
                     panic!( "invalid header name: {:?} ({:?})", name, res.unwrap_err() );

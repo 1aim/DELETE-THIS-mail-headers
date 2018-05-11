@@ -1,5 +1,6 @@
 extern crate mime;
-extern crate soft_ascii_string;
+#[doc(hidden)]
+pub extern crate soft_ascii_string;
 extern crate quoted_string;
 #[macro_use]
 extern crate failure;
@@ -42,9 +43,7 @@ pub use self::header_macro::*;
 pub use self::map::HeaderMap;
 pub use self::header_impl::*;
 
-// reexports for macros
-#[doc(hidden)]
-pub use soft_ascii_string::SoftAsciiStr as __SoftAsciiStr;
+
 // I can not reexport a private think anymore, so I need to reexport the
 // extern crate and then make the normal name available, too
 use __common as common;
