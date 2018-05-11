@@ -2,6 +2,7 @@ pub use soft_ascii_string::{ SoftAsciiStr as _SoftAsciiStr };
 
 
 /// Defines a new header types with given type name, filed name and component
+///
 /// Note that the name is not checked/validated, it has to be ascii, a valid
 /// header field name AND has to comply with the naming schema (each word
 /// seperated by `'-'` starts with a capital letter and no cappital letter

@@ -434,7 +434,22 @@ impl<'a, H> Debug for TypedBodies<'a, H>
     }
 }
 
-
+/// Create a header map from a list of header's with ther fields
+///
+/// # Example
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate mail_headers;
+/// # use mail_headers::*;
+/// # use mail_headers::error::HeaderInsertionError;
+/// # fn main() { (|| -> Result<(), HeaderInsertionError> {
+/// let map = headers! {
+///     _From: ["bobo@nana.test"],
+///     Subject: "hy there"
+/// }?;
+/// # Ok(()) })(); }
+/// ```
 #[macro_export]
 macro_rules! headers {
     ($($header:ty : $val:expr),*) => ({
