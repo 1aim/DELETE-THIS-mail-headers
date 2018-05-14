@@ -60,11 +60,9 @@ impl EncodableInHeader for  Unstructured {
                 .with_str_context(text)
             )?;
 
-        let mut had_word = false;
         for block in partitions.into_iter() {
             match block {
                 Partition::VCHAR( data ) => {
-                    had_word = true;
                     let mail_type = handle.mail_type();
                     handle.write_if(data, |s|
                         s.chars().all(|ch| is_vchar(ch, mail_type))
@@ -79,9 +77,6 @@ impl EncodableInHeader for  Unstructured {
                     })?;
                 },
                 Partition::SPACE( data ) => {
-                    //NOTE: the usage of write_fws is relevant for braking the line and CRLF
-                    // is still semantically ignored BUT, ther cant be any comments here,
-                    // as we are in a unstructured header field
                     let mut had_fws = false;
                     for ch in data.chars() {
                         if ch == '\r' || ch == '\n' {
@@ -93,9 +88,10 @@ impl EncodableInHeader for  Unstructured {
                         handle.write_char( SoftAsciiChar::from_char_unchecked(ch) )?;
                     }
                     if !had_fws {
-                        //currently this can only happen if data only consists of '\r','\n'
+                        // currently this can only happen if data only consists of '\r','\n'
+                        // which we strip which in turn would remove the spacing completely
                         //NOTE: space has to be at last one horizontal-white-space
-                        // (required by the possibility of VCHAR partitions beeing
+                        // (required by the possibility of VCHAR partitions being
                         //  encoded words)
                         handle.write_fws();
                     }
@@ -103,17 +99,7 @@ impl EncodableInHeader for  Unstructured {
             }
 
         }
-
-        if had_word {
-            Ok(())
-        } else {
-            return Err(
-                EncodingError
-                ::from(Size0Error.context(EncodingErrorKind::Malformed))
-                .with_str_context(text)
-            );
-        }
-
+        Ok(())
     }
 
     fn boxed_clone(&self) -> Box<EncodableInHeader> {
