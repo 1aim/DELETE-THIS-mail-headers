@@ -4,6 +4,8 @@ use failure::{Fail, Context, Error as FError, Backtrace};
 
 use ::name::HeaderName;
 
+/// This error can occur if different implementations for the
+/// same header (e.g. `Subject`) where used in the same `HeaderMap`.
 #[derive(Debug, Fail)]
 #[fail(display = "cast error caused by mixing different header implementations for {}", header_name)]
 pub struct HeaderTypeError {
@@ -27,6 +29,16 @@ impl HeaderTypeError {
     }
 }
 
+//TODO reconsider some implementation details of HeaderMap
+// we probably don't need any way to end up with a  Type error
+// here
+/// This error represents the failure to insert a header into an header map.
+///
+/// Insertion can fail because of two reasons:
+/// 1. you use two different implementations for the same header in the
+///    same header map
+/// 2. the component representing the header fields value can't be create
+///    from the given data e.g. `_From: ["this_should_be_an_email_address"]`
 #[derive(Debug, Fail)]
 pub enum HeaderInsertionError {
     #[fail(display = "inserting header failed: {}", _0)]
@@ -48,7 +60,11 @@ impl From<ComponentCreationError> for HeaderInsertionError {
     }
 }
 
-
+/// A validator specified in a header definition failed.
+///
+/// Common validators are e.g. to make sure that if a
+/// From header has multiple mailboxes that there is
+/// a Sender header etc.
 #[derive(Debug, Fail)]
 pub enum HeaderValidationError {
     #[fail(display = "{}", _0)]
@@ -139,6 +155,11 @@ impl ChainTail {
     }
 }
 
+/// Creating a (header field) component from the given data failed
+///
+/// A good example converting a string to a mailbox by parsing it,
+/// or more concretely failing to do so because it's not a valid
+/// mail address.
 #[derive(Debug)]
 pub struct ComponentCreationError {
     component: &'static str,
@@ -148,6 +169,9 @@ pub struct ComponentCreationError {
 
 impl ComponentCreationError {
 
+    /// create a new `ComponentCreationError` based on a different error and the name of the component
+    ///
+    /// The name is normally the type name, for example `Email`, `Mailbox` etc.
     pub fn from_parent<P>(parent: P, component: &'static str) -> Self
         where P: Into<FError>
     {
@@ -158,6 +182,9 @@ impl ComponentCreationError {
         }
     }
 
+    /// creates a new `ComponentCreationError` based on the components name
+    ///
+    /// The name is normally the type name, for example `Email`, `Mailbox` etc.
     pub fn new(component: &'static str) -> Self {
         ComponentCreationError {
             component,
@@ -166,6 +193,12 @@ impl ComponentCreationError {
         }
     }
 
+    /// creates a new `ComponentCreationError` based on the components name with a str_context
+    ///
+    /// The name is normally the type name, for example `Email`, `Mailbox` etc.
+    ///
+    /// The `str_context` is a snipped of text which can help a human to identify the
+    /// invalid parts, e.g. for parsing a email it could be the invalid email address.
     pub fn new_with_str<I>(component: &'static str, str_context: I) -> Self
         where I: Into<String>
     {
