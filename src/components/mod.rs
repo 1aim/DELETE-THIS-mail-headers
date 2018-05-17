@@ -20,10 +20,10 @@ mod unstructured;
 pub use self::unstructured::Unstructured;
 
 mod message_id;
-pub use self::message_id::{ MessageID, MessageIDList };
+pub use self::message_id::{ MessageId, MessageIdList };
 
-pub type ContentID = MessageID;
-pub type ContentIDList = MessageIDList;
+pub type ContentID = MessageId;
+pub type ContentIDList = MessageIdList;
 
 mod cfws;
 pub use self::cfws::{ CFWS, FWS };

@@ -24,11 +24,11 @@ def_headers! {
     /// (rfc5322)
     Bcc,          unchecked { "Bcc"           },  MailboxList,    maxOne,
     /// (rfc5322)
-    MessageId,    unchecked { "Message-Id"    },  MessageID,      maxOne,
+    MessageId,    unchecked { "Message-Id"    },  MessageId,      maxOne,
     /// (rfc5322)
-    InReplyTo,    unchecked { "In-Reply-To"   },  MessageIDList,  maxOne,
+    InReplyTo,    unchecked { "In-Reply-To"   },  MessageIdList,  maxOne,
     /// (rfc5322)
-    References,   unchecked { "References"    },  MessageIDList,  maxOne,
+    References,   unchecked { "References"    },  MessageIdList,  maxOne,
     /// (rfc5322)
     Subject,      unchecked { "Subject"       },  Unstructured,   maxOne,
     /// (rfc5322)
@@ -48,17 +48,17 @@ def_headers! {
     /// (rfc5322)
     ResentBcc,    unchecked { "Resent-Bcc"    },  OptMailboxList, validator_resent_any,
     /// (rfc5322)
-    ResentMsgId,  unchecked { "Resent-Msg-Id" },  MessageID,      validator_resent_any,
+    ResentMsgId,  unchecked { "Resent-Msg-Id" },  MessageId,      validator_resent_any,
     /// (rfc5322)
     ReturnPath,   unchecked { "Return-Path"   },  Path,           None,
     /// (rfc5322)
     Received,     unchecked { "Received"      },  ReceivedToken,  None,
 
     /// (rfc2045)
-    ContentType,  unchecked { "Content-Type"              }, MediaType,        maxOne,
+    ContentType,  unchecked { "Content-Type"  }, MediaType,        maxOne,
 
     /// (rfc2045)
-    ContentId,    unchecked { "Content-Id"                }, ContentID,        maxOne,
+    ContentId,    unchecked { "Content-Id"    }, ContentID,        maxOne,
 
     /// The transfer encoding used to (transfer) encode the body (rfc2045)
     ///

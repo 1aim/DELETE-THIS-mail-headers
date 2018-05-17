@@ -18,12 +18,12 @@ use ::data::{ Input, SimpleItem };
 /// some places and one which doesn't. This implementation
 /// only supports the later one.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
-pub struct MessageID {
+pub struct MessageId {
     message_id: SimpleItem
 }
 
 
-impl MessageID {
+impl MessageId {
 
     pub fn new(left_part: &SoftAsciiStr, right_part: &SoftAsciiStr)
         -> Result<Self, ComponentCreationError>
@@ -34,7 +34,7 @@ impl MessageID {
             IResult::Done( "", _part ) => {},
             _other => {
                 return Err(ComponentCreationError::new_with_str(
-                    "MessageID", format!("{}@{}", left_part, right_part)));
+                    "MessageId", format!("{}@{}", left_part, right_part)));
             }
         }
 
@@ -42,23 +42,23 @@ impl MessageID {
             IResult::Done( "", _part ) => {},
             _other => {
                 return Err(ComponentCreationError::new_with_str(
-                    "MessageID", format!("{}@{}", left_part, right_part)));
+                    "MessageId", format!("{}@{}", left_part, right_part)));
             }
         }
 
         let id = SoftAsciiString::from_string_unchecked(
             format!("{}@{}", left_part, right_part));
         let item = SimpleItem::Ascii(id.into());
-        Ok(MessageID { message_id: item })
+        Ok(MessageId { message_id: item })
     }
 
-    //FIXME make into AsRef<str> for MessageID
+    //FIXME make into AsRef<str> for MessageId
     pub fn as_str( &self ) -> &str {
         self.message_id.as_str()
     }
 }
 
-impl<T> HeaderTryFrom<T> for MessageID
+impl<T> HeaderTryFrom<T> for MessageId
     where T: HeaderTryInto<Input>
 {
     fn try_from( input: T ) ->  Result<Self, ComponentCreationError> {
@@ -69,16 +69,16 @@ impl<T> HeaderTryFrom<T> for MessageID
         match parse_message_id(input.as_str()) {
             IResult::Done( "", _msg_id ) => {},
             _other => {
-                return Err(ComponentCreationError::new_with_str("MessageID", input.as_str()));
+                return Err(ComponentCreationError::new_with_str("MessageId", input.as_str()));
             }
         }
 
 
-        Ok( MessageID { message_id: input.into() } )
+        Ok( MessageId { message_id: input.into() } )
     }
 }
 
-impl EncodableInHeader for  MessageID {
+impl EncodableInHeader for  MessageId {
 
     fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
@@ -98,11 +98,11 @@ impl EncodableInHeader for  MessageID {
 }
 
 #[derive(Debug, Clone)]
-pub struct MessageIDList( pub Vec1<MessageID> );
+pub struct MessageIdList( pub Vec1<MessageId> );
 
-deref0!{ +mut MessageIDList => Vec1<MessageID> }
+deref0!{ +mut MessageIdList => Vec1<MessageId> }
 
-impl EncodableInHeader for  MessageIDList {
+impl EncodableInHeader for  MessageIdList {
 
     fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         for msg_id in self.iter() {
@@ -229,7 +229,7 @@ mod test {
     use super::*;
 
     ec_test!{ new, {
-        MessageID::new(
+        MessageId::new(
             SoftAsciiStr::from_str_unchecked("just.me"),
             SoftAsciiStr::from_str_unchecked("[127.0.0.1]")
         )?
@@ -240,7 +240,7 @@ mod test {
     ]}
 
     ec_test!{ simple, {
-        MessageID::try_from( "affen@haus" )?
+        MessageId::try_from( "affen@haus" )?
     } => ascii => [
         MarkFWS,
         // there are two "context" one which allows FWS inside (defined = email)
@@ -250,7 +250,7 @@ mod test {
     ]}
 
     ec_test!{ utf8, {
-        MessageID::try_from( "↓@↑.utf8")?
+        MessageId::try_from( "↓@↑.utf8")?
     } => utf8 => [
         MarkFWS,
         Text "<↓@↑.utf8>",
@@ -261,15 +261,15 @@ mod test {
     fn utf8_fails() {
         let mut encoder = EncodingBuffer::new(MailType::Ascii);
         let mut handle = encoder.writer();
-        let mid = MessageID::try_from( "abc@øpunny.code" ).unwrap();
+        let mid = MessageId::try_from( "abc@øpunny.code" ).unwrap();
         assert_err!(mid.encode( &mut handle ));
         handle.undo_header();
     }
 
     ec_test!{ multipls, {
-        let fst = MessageID::try_from( "affen@haus" )?;
-        let snd = MessageID::try_from( "obst@salat" )?;
-        MessageIDList( vec1! [
+        let fst = MessageId::try_from( "affen@haus" )?;
+        let snd = MessageId::try_from( "obst@salat" )?;
+        MessageIdList( vec1! [
             fst,
             snd
         ])
