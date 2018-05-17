@@ -5,8 +5,8 @@ pub use soft_ascii_string::{ SoftAsciiStr as _SoftAsciiStr };
 ///
 /// Note that the name is not checked/validated, it has to be ascii, a valid
 /// header field name AND has to comply with the naming schema (each word
-/// seperated by `'-'` starts with a capital letter and no cappital letter
-/// follow, e.g. "Message-Id" is ok but "Message-ID" isn't).
+/// separated by `'-'` starts with a capital letter and no capital letter
+/// follow, e.g. "Message-Id" is ok **but "Message-ID" isn't**).
 ///
 /// This macro will create a test which will check if the used field names
 /// are actually valid and appears only once (_per def_header macro call_)
@@ -27,9 +27,6 @@ pub use soft_ascii_string::{ SoftAsciiStr as _SoftAsciiStr };
 ///
 ///    1. `<typename>` the name the type of the header will have, i.e. the name of a zero-sized
 ///       struct which will be generated
-///    2. `<qunatity>`, stating weather the header can appear at most one time (`maxOne`)
-///       or any number of times (`anyNumber`). Note: that only `Date` and `From` are
-///       required headers, no other can be made into such.
 ///    3. `unchecked` a hint to make people read the documentation and not forget the the
 ///       folowing data is `unchecked` / only vaidated in the auto-generated test
 ///    4. `"<header_name>"` the header name in a syntax using `'-'` to serperate words,
@@ -42,10 +39,17 @@ pub use soft_ascii_string::{ SoftAsciiStr as _SoftAsciiStr };
 ///    5. `<component>` the name of the type to use ing `scope` a the component type of
 ///       the header. E.g. `Unstructured` for an unstructured header field (which still
 ///       support Utf8 through encoded words)
-///    6. `None`/`<ident>`, None or the name of a validator function (if there is one).
-///       This function is called before encoding with the header map as argument, and
-///       can cause a error. Use this to enfore contextual limitations like having a
-///       `From` with multiple mailboxes makes `Sender` an required field.
+///    6. `None`/`maxOne`/`<name>`, None, maxOne or the name of a validator function.
+///       The validator function is used to validate some contextual limitations a header field
+///       might have, like that it can appear at most one time, or that if a `From` with multiple
+///       mailboxes is given a `Sender` field needs to be given too.
+///       If `maxOne` is used it will automatically generate a function which makes sure that
+///       the header appears at most one time. This validator functions are used _after_ creating
+///       a header map but before using it to encode a mail (or anywhere in between if you want to).
+///       Note that validators are kept separate from the headers and might be run even if the header
+///       does not appear in the header map passed to the validator, as such if a validator can not find
+///       the header it should validate or if it finds it but it has an unexpected type it _must not_
+///       create an error.
 ///
 /// # Example
 ///
@@ -57,11 +61,11 @@ pub use soft_ascii_string::{ SoftAsciiStr as _SoftAsciiStr };
 ///     // E.g. `DateTime` refers to `components::DateTime`.
 ///     scope: components,
 ///     // definitions of the headers or the form
-///     // <type_name>, <quantitiy>, unchecked { <struct_name> }, <component>, <contextual_validator>
-///     Date,     maxOne,    unchecked { "Date"          },  DateTime,       None,
-///     From,     maxOne,    unchecked { "From"          },  MailboxList,    validator_from,
-///     Subject,  maxOne,    unchecked { "Subject"       },  Unstructured,   None,
-///     Comments, anyNumber, unchecked { "Comments"      },  Unstructured,   None,
+///     // <type_name>, unchecked { <struct_name> }, <component>, <validator>
+///     Date,     unchecked { "Date"          },  DateTime,       maxOne,
+///     From,     unchecked { "From"          },  MailboxList,    validator_from,
+///     Subject,  unchecked { "Subject"       },  Unstructured,   maxOne,
+///     Comments, unchecked { "Comments"      },  Unstructured,   None,
 /// }
 /// ```
 #[macro_export]
@@ -71,7 +75,7 @@ macro_rules! def_headers {
         scope: $scope:ident,
         $(
             $(#[$attr:meta])*
-            $name:ident, $multi:ident, unchecked { $hname:tt }, $component:ident, $validator:ident
+            $name:ident, unchecked { $hname:tt }, $component:ident, $validator:ident
         ),+
     ) => (
         $(
@@ -79,7 +83,7 @@ macro_rules! def_headers {
             pub struct $name;
 
             impl $crate::Header for  $name {
-                const MAX_COUNT_EQ_1: bool = def_headers!(_PRIV_boolify $multi);
+
                 type Component = $scope::$component;
 
                 fn name() -> $crate::HeaderName {
@@ -87,17 +91,9 @@ macro_rules! def_headers {
                     $crate::HeaderName::from_ascii_unchecked( as_str )
                 }
 
-                const CONTEXTUAL_VALIDATOR:
-                    Option<
-                        fn(&$crate::map::HeaderMap)
-                        -> Result<(), $crate::error::HeaderValidationError>
-                    > =
-                        def_headers!{ _PRIV_mk_validator $validator };
+                const VALIDATOR: ::std::option::Option<$crate::map::HeaderMapValidator> =
+                        def_headers!{ _PRIV_mk_validator $name, $validator };
             }
-        )+
-
-        $(
-            def_headers!{ _PRIV_impl_marker $multi $name }
         )+
 
         //TODO warn if header type name and header name diverges
@@ -139,17 +135,16 @@ macro_rules! def_headers {
             }
         }
     );
-    (_PRIV_mk_validator None) => ({ None });
-    (_PRIV_mk_validator $validator:ident) => ({ Some($validator) });
-    (_PRIV_boolify anyNumber) => ({ false });
-    (_PRIV_boolify maxOne) => ({ true });
-    (_PRIV_boolify $other:tt) => (
-        compile_error!( "only `maxOne` or `anyNumber` are valid" )
-    );
-    ( _PRIV_impl_marker anyNumber $name:ident ) => (
-        //do nothing here
-    );
-    ( _PRIV_impl_marker maxOne $name:ident ) => (
-        impl $crate::SingularHeaderMarker for $name {}
-    );
+    (_PRIV_mk_validator $name:ident, None) => ({ None });
+    (_PRIV_mk_validator $name:ident, maxOne) => ({
+        fn max_one(map: &$crate::HeaderMap)
+            -> ::std::result::Result<(), $crate::error::HeaderValidationError>
+        {
+            let name = $name::name();
+            $crate::map::check_header_count_max_one(name, map)
+        }
+
+        Some(max_one as $crate::map::HeaderMapValidator)
+    });
+    (_PRIV_mk_validator $name:ident, $validator:ident) => ({ Some($validator) });
 }

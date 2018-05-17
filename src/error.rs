@@ -87,6 +87,10 @@ impl From<Context<BuildInValidationError>> for HeaderValidationError {
 
 #[derive(Copy, Clone, Debug, Fail, PartialEq, Eq, Hash)]
 pub enum BuildInValidationError {
+
+    #[fail(display = "{} header field can appear at most one time in a header map", header_name)]
+    MoreThenOne{ header_name: &'static str },
+
     #[fail(display = "From field contained multiple addresses but no Sender field was set")]
     MultiMailboxFromWithoutSender,
 

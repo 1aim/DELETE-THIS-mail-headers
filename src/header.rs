@@ -3,12 +3,9 @@ use ::name::HeaderName;
 //NOTE: this is a circular dependency between Header/HeaderMap
 // but putting up e.g. a GenericHeaderMap trait/interface is
 // not worth the work at all
-use ::map::HeaderMap;
+use ::map::HeaderMapValidator;
 
 pub trait Header {
-
-    /// true if the header can appear at most once
-    const MAX_COUNT_EQ_1: bool;
 
     /// the component representing the header-field, e.g. `Unstructured` for `Subject`
     type Component;
@@ -29,16 +26,9 @@ pub trait Header {
     /// there and the component is of the expected type
     /// and it is invalid in the context
     /// an error should be returned.
-    const CONTEXTUAL_VALIDATOR: Option<
-        fn(&HeaderMap)-> Result<(), ::error::HeaderValidationError>
-    >;
+    const VALIDATOR: Option<HeaderMapValidator>;
 }
 
-/// all headers defined with `def_headers!` where
-/// `MAX_COUNT_EQ_1` is `true` do implement
-/// `SingularHeaderMarker` which is required to use
-/// the `HeaderMap::get_single` functionality.
-pub trait SingularHeaderMarker {}
 
 /// a utility trait allowing us to use type hint structs
 /// in `HeaderMap::{contains, get_untyped}`

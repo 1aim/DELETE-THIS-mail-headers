@@ -10,55 +10,55 @@ def_headers! {
     test_name: validate_header_names,
     scope: components,
     /// (rfc5322)
-    Date,            maxOne, unchecked { "Date"          },  DateTime,       None,
+    Date,         unchecked { "Date"          },  DateTime,       maxOne,
     /// (rfc5322)
-    _From,            maxOne, unchecked { "From"          },  MailboxList,    validator_from,
+    _From,        unchecked { "From"          },  MailboxList,    validator_from,
     /// (rfc5322)
-    Sender,          maxOne, unchecked { "Sender"        },  Mailbox,        None,
+    Sender,       unchecked { "Sender"        },  Mailbox,        maxOne,
     /// (rfc5322)
-    ReplyTo,         maxOne, unchecked { "Reply-To"      },  MailboxList,    None,
+    ReplyTo,      unchecked { "Reply-To"      },  MailboxList,    maxOne,
     /// (rfc5322)
-    _To,              maxOne, unchecked { "To"            },  MailboxList,    None,
+    _To,          unchecked { "To"            },  MailboxList,    maxOne,
     /// (rfc5322)
-    Cc,              maxOne, unchecked { "Cc"            },  MailboxList,    None,
+    Cc,           unchecked { "Cc"            },  MailboxList,    maxOne,
     /// (rfc5322)
-    Bcc,             maxOne, unchecked { "Bcc"           },  MailboxList,    None,
+    Bcc,          unchecked { "Bcc"           },  MailboxList,    maxOne,
     /// (rfc5322)
-    MessageId,       maxOne, unchecked { "Message-Id"    },  MessageID,      None,
+    MessageId,    unchecked { "Message-Id"    },  MessageID,      maxOne,
     /// (rfc5322)
-    InReplyTo,       maxOne, unchecked { "In-Reply-To"   },  MessageIDList,  None,
+    InReplyTo,    unchecked { "In-Reply-To"   },  MessageIDList,  maxOne,
     /// (rfc5322)
-    References,      maxOne, unchecked { "References"    },  MessageIDList,  None,
+    References,   unchecked { "References"    },  MessageIDList,  maxOne,
     /// (rfc5322)
-    Subject,         maxOne, unchecked { "Subject"       },  Unstructured,   None,
+    Subject,      unchecked { "Subject"       },  Unstructured,   maxOne,
     /// (rfc5322)
-    Comments,     anyNumber, unchecked { "Comments"      },  Unstructured,   None,
+    Comments,     unchecked { "Comments"      },  Unstructured,   None,
     /// (rfc5322)
-    Keywords,     anyNumber, unchecked { "Keywords"      },  PhraseList,     None,
+    Keywords,     unchecked { "Keywords"      },  PhraseList,     None,
     /// (rfc5322)
-    ResentDate,   anyNumber, unchecked { "Resent-Date"   },  DateTime,       validator_resent_any,
+    ResentDate,   unchecked { "Resent-Date"   },  DateTime,       validator_resent_any,
     /// (rfc5322)
-    ResentFrom,   anyNumber, unchecked { "Resent-From"   },  MailboxList,    validator_resent_any,
+    ResentFrom,   unchecked { "Resent-From"   },  MailboxList,    validator_resent_any,
     /// (rfc5322)
-    ResentSender, anyNumber, unchecked { "Resent-Sender" },  Mailbox,        validator_resent_any,
+    ResentSender, unchecked { "Resent-Sender" },  Mailbox,        validator_resent_any,
     /// (rfc5322)
-    ResentTo,     anyNumber, unchecked { "Resent-To"     },  MailboxList,    validator_resent_any,
+    ResentTo,     unchecked { "Resent-To"     },  MailboxList,    validator_resent_any,
     /// (rfc5322)
-    ResentCc,     anyNumber, unchecked { "Resent-Cc"     },  MailboxList,    validator_resent_any,
+    ResentCc,     unchecked { "Resent-Cc"     },  MailboxList,    validator_resent_any,
     /// (rfc5322)
-    ResentBcc,    anyNumber, unchecked { "Resent-Bcc"    },  OptMailboxList, validator_resent_any,
+    ResentBcc,    unchecked { "Resent-Bcc"    },  OptMailboxList, validator_resent_any,
     /// (rfc5322)
-    ResentMsgId,  anyNumber, unchecked { "Resent-Msg-Id" },  MessageID,      validator_resent_any,
+    ResentMsgId,  unchecked { "Resent-Msg-Id" },  MessageID,      validator_resent_any,
     /// (rfc5322)
-    ReturnPath,   anyNumber, unchecked { "Return-Path"   },  Path,           None,
+    ReturnPath,   unchecked { "Return-Path"   },  Path,           None,
     /// (rfc5322)
-    Received,     anyNumber, unchecked { "Received"      },  ReceivedToken,  None,
+    Received,     unchecked { "Received"      },  ReceivedToken,  None,
 
     /// (rfc2045)
-    ContentType,     maxOne, unchecked { "Content-Type"              }, MediaType,        None,
+    ContentType,  unchecked { "Content-Type"              }, MediaType,        maxOne,
 
     /// (rfc2045)
-    ContentId,       maxOne, unchecked { "Content-Id"                }, ContentID,        None,
+    ContentId,    unchecked { "Content-Id"                }, ContentID,        maxOne,
 
     /// The transfer encoding used to (transfer) encode the body (rfc2045)
     ///
@@ -84,13 +84,13 @@ def_headers! {
     ///
     /// Nevertheless this encodings are mainly meant to be used for defining the
     /// domain of data in a system before it is encoded.
-    ContentTransferEncoding, maxOne, unchecked { "Content-Transfer-Encoding" }, TransferEncoding, None,
+    ContentTransferEncoding, unchecked { "Content-Transfer-Encoding" }, TransferEncoding, maxOne,
 
     /// A description of the content of the body (rfc2045)
     ///
     /// This is mainly usefull for multipart body parts, e.g.
     /// to add an description to a inlined/attached image.
-    ContentDescription,      maxOne, unchecked { "Content-Description"       }, Unstructured,     None,
+    ContentDescription,   unchecked { "Content-Description"       }, Unstructured,     maxOne,
 
     /// Defines the disposition of a multipart part it is used on (rfc2183)
     ///
@@ -110,7 +110,7 @@ def_headers! {
     /// - `read-date`: when the resource this body is based on was read (to create the body)
     /// - `size`: the size this resource should have, note that `Content-Size` is NOT a mail
     ///           related header but specific to http.
-    ContentDisposition, maxOne, unchecked { "Content-Disposition"       }, Disposition, None
+    ContentDisposition, unchecked { "Content-Disposition"       }, Disposition, maxOne
 }
 
 mod validators {

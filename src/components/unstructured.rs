@@ -11,8 +11,6 @@ use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use ::data::Input;
 
-use vec1::Size0Error;
-
 use super::utils::text_partition::{partition, Partition};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -110,8 +108,6 @@ impl EncodableInHeader for  Unstructured {
 
 #[cfg(test)]
 mod test {
-    use common::MailType;
-    use common::encoder::EncodingBuffer;
 
     use super::*;
 
@@ -182,15 +178,10 @@ mod test {
         Text " \t"
     ]}
 
-
-    #[test]
-    fn wsp_only_phrase_fails() {
-        let mut encoder = EncodingBuffer::new(MailType::Ascii);
-        {
-            let mut handle = encoder.writer();
-            let input = Unstructured::try_from( " \t " ).unwrap();
-            assert_err!(input.encode( &mut handle ));
-            handle.undo_header();
-        }
-    }
+    ec_test!{ wsp_only_phrase, {
+        Unstructured::try_from( " \t " )?
+    } => ascii => [
+        MarkFWS,
+        Text " \t "
+    ]}
 }
