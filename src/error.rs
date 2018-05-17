@@ -29,37 +29,6 @@ impl HeaderTypeError {
     }
 }
 
-//TODO reconsider some implementation details of HeaderMap
-// we probably don't need any way to end up with a  Type error
-// here
-/// This error represents the failure to insert a header into an header map.
-///
-/// Insertion can fail because of two reasons:
-/// 1. you use two different implementations for the same header in the
-///    same header map
-/// 2. the component representing the header fields value can't be create
-///    from the given data e.g. `_From: ["this_should_be_an_email_address"]`
-#[derive(Debug, Fail)]
-pub enum HeaderInsertionError {
-    #[fail(display = "inserting header failed: {}", _0)]
-    Type(HeaderTypeError),
-
-    #[fail(display = "inserting header failed: {}", _0)]
-    Component(ComponentCreationError),
-}
-
-impl From<HeaderTypeError> for HeaderInsertionError {
-    fn from(inner: HeaderTypeError) -> Self {
-        HeaderInsertionError::Type(inner)
-    }
-}
-
-impl From<ComponentCreationError> for HeaderInsertionError {
-    fn from(inner: ComponentCreationError) -> Self {
-        HeaderInsertionError::Component(inner)
-    }
-}
-
 /// A validator specified in a header definition failed.
 ///
 /// Common validators are e.g. to make sure that if a
