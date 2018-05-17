@@ -346,7 +346,7 @@ macro_rules! headers {
         {
             let mut map = $crate::HeaderMap::new();
             $(
-                let component = <$header as $crate::Header>::Component::try_from($val)?;
+                let component: <$header as $crate::Header>::Component = $crate::HeaderTryFrom::try_from($val)?;
                 map._insert::<$header>(component);
             )*
             Ok(map)
