@@ -1,7 +1,8 @@
 use std::ops::Deref;
+use std::borrow::Cow;
 
 use failure::Fail;
-use soft_ascii_string::SoftAsciiChar;
+use soft_ascii_string::{SoftAsciiStr, SoftAsciiString, SoftAsciiChar};
 
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 use quoted_string::quote_if_needed;
@@ -183,24 +184,18 @@ impl Domain {
     //  the function is only allowed to return MailType::Ascii
     //  if the domain is actually ascii
     fn check_domain( domain: &str ) -> Result<MailType, ComponentCreationError> {
-        let mut ascii = true;
         if domain.starts_with("[") && domain.ends_with("]") {
-            //check domain-literal
-            //for now the support of domain literals is limited i.e:
-            //  1. no contained line
-            //  2. no leading/trailing CFWS before/after the "["/"]"
-            for char in domain.chars() {
-                if ascii { ascii = is_ascii( char ) }
-                if !( is_dtext( char, MailType::Internationalized) || is_ws( char ) ) {
+            //TODO improved support for domain literals, e.g. internationalized ones? CRLF? etc.
+            for ch in domain.chars() {
+                if !(is_dtext(ch, MailType::Ascii) || is_ws(ch)) {
                     let mut err = ComponentCreationError::new("Domain");
                     err.set_str_context(domain);
                     return Err(err);
                 }
             }
+            Ok(MailType::Ascii)
         } else {
-            //check dot-atom-text
-            // when supported Comments will be supported through the type system,
-            // not stringly typing
+            let mut ascii = true;
             let mut dot_alowed = false;
             for char in domain.chars() {
                 if ascii { ascii = is_ascii( char ) }
@@ -214,12 +209,34 @@ impl Domain {
                     dot_alowed = true;
                 }
             }
+            Ok(if ascii {
+                MailType::Ascii
+            } else {
+                MailType::Internationalized
+            })
         }
-        Ok( if ascii {
-            MailType::Ascii
-        } else {
-            MailType::Internationalized
-        } )
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+
+    pub fn into_ascii_string(self) -> Result<SoftAsciiString, EncodingError> {
+        match self.0 {
+            SimpleItem::Ascii(ascii) => Ok(ascii.into()),
+            SimpleItem::Utf8(utf8) => idna::puny_code_domain(utf8)
+        }
+    }
+
+    pub fn to_ascii_string(&self) -> Result<Cow<SoftAsciiStr>, EncodingError> {
+        Ok(match self.0 {
+            SimpleItem::Ascii(ref ascii) => {
+                Cow::Borrowed(ascii)
+            },
+            SimpleItem::Utf8(ref utf8) => {
+                Cow::Owned(idna::puny_code_domain(utf8)?)
+            }
+        })
     }
 }
 
@@ -357,5 +374,19 @@ mod test {
     fn domain_as_str() {
         let domain = Domain::try_from("hello").unwrap();
         assert_eq!(domain.as_str(), "hello")
+    }
+
+    #[test]
+    fn to_ascii_string_puny_encodes_if_needed() {
+        let domain = Domain::try_from("hö.test").unwrap();
+        let stringified = domain.to_ascii_string().unwrap();
+        assert_eq!(&*stringified, "xn--h-1ga.test")
+    }
+
+    #[test]
+    fn into_ascii_string_puny_encodes_if_needed() {
+        let domain = Domain::try_from("hö.test").unwrap();
+        let stringified = domain.into_ascii_string().unwrap();
+        assert_eq!(&*stringified, "xn--h-1ga.test")
     }
 }
