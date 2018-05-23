@@ -180,6 +180,18 @@ impl<T> HeaderTryFrom<T> for Domain
 }
 
 impl Domain {
+
+    /// creates a domain from a string without checking for validity
+    pub fn from_unchecked(string: String) -> Self {
+        let item =
+            match SoftAsciiString::from_string(string) {
+                Ok(ascii) => ascii.into(),
+                Err(err) => err.into_source().into()
+            };
+
+        Domain(item)
+    }
+
     //CONSTRAINT:
     //  the function is only allowed to return MailType::Ascii
     //  if the domain is actually ascii
