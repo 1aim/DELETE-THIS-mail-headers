@@ -25,6 +25,21 @@ pub struct MessageId {
 
 impl MessageId {
 
+    /// creates a message id from a string without checking for validity
+    ///
+    /// The string is expected to have the format `<left_part> "@" <right_part>`,
+    /// i.e. it should not include the `"<"`, `">"` surrounding message id's in
+    /// more or less all places they are used.
+    pub fn from_unchecked(string: String) -> Self {
+        let item =
+            match SoftAsciiString::from_string(string) {
+                Ok(ascii) => ascii.into(),
+                Err(err) => err.into_source().into()
+            };
+
+        MessageId { message_id: item }
+    }
+
     pub fn new(left_part: &SoftAsciiStr, right_part: &SoftAsciiStr)
         -> Result<Self, ComponentCreationError>
     {
