@@ -58,7 +58,7 @@ def_headers! {
     ContentType,  unchecked { "Content-Type"  }, MediaType,        maxOne,
 
     /// (rfc2045)
-    ContentId,    unchecked { "Content-Id"    }, ContentID,        maxOne,
+    ContentId,    unchecked { "Content-Id"    }, ContentId,        maxOne,
 
     /// The transfer encoding used to (transfer) encode the body (rfc2045)
     ///
