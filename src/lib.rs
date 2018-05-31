@@ -18,6 +18,9 @@ extern crate total_order_multi_map;
 #[cfg_attr(test, macro_use)]
 pub extern crate mail_common as __common;
 
+#[cfg(feature="serialize-content-id")]
+extern crate serde;
+
 #[cfg(all(test, not(feature="traceing")))]
 compile_error! { "testing needs feature `traceing` to be enabled" }
 

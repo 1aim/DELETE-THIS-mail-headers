@@ -1,8 +1,9 @@
-
+use std::fmt::{self, Display};
 use nom::IResult;
 
 use soft_ascii_string::{SoftAsciiChar, SoftAsciiStr, SoftAsciiString};
 use vec1::Vec1;
+use serde::{Serialize, Serializer};
 
 use common::error::EncodingError;
 use common::encoder::{EncodingWriter, EncodableInHeader};
@@ -70,6 +71,20 @@ impl MessageId {
     //FIXME make into AsRef<str> for MessageId
     pub fn as_str( &self ) -> &str {
         self.message_id.as_str()
+    }
+}
+
+impl Serialize for MessageId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl Display for MessageId {
+    fn fmt(&self, fter: &mut fmt::Formatter) -> fmt::Result {
+        fter.write_str(self.as_str())
     }
 }
 
