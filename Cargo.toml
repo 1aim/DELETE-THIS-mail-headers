@@ -16,7 +16,7 @@ serde = "1.0.38"
 serde_derive = "1.0.38"
 nom = "3.1.0"
 soft-ascii-string = "1.0"
-quoted-string = { git="https://github.com/1aim/quoted-string", version="0.5" }
+quoted-string = "0.6"
 mail-common = { git="https://github.com/1aim/mail-common" }
 vec1 = "1.0"
 chrono = "0.4.0"
