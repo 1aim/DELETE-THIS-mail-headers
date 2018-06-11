@@ -17,11 +17,11 @@ impl TransferEncoding {
     pub fn repr(&self ) -> &SoftAsciiStr {
         use self::TransferEncoding::*;
         match *self {
-            _7Bit => SoftAsciiStr::from_str_unchecked("7bit"),
-            _8Bit => SoftAsciiStr::from_str_unchecked("8bit"),
-            Binary =>  SoftAsciiStr::from_str_unchecked("binary"),
-            QuotedPrintable => SoftAsciiStr::from_str_unchecked("quoted-printable"),
-            Base64 =>  SoftAsciiStr::from_str_unchecked("base64"),
+            _7Bit => SoftAsciiStr::from_unchecked("7bit"),
+            _8Bit => SoftAsciiStr::from_unchecked("8bit"),
+            Binary =>  SoftAsciiStr::from_unchecked("binary"),
+            QuotedPrintable => SoftAsciiStr::from_unchecked("quoted-printable"),
+            Base64 =>  SoftAsciiStr::from_unchecked("base64"),
         }
     }
 }

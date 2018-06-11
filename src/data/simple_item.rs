@@ -98,7 +98,7 @@ impl From<Input> for SimpleItem {
             },
             Input( InnerUtf8::Shared( shared ) ) => {
                 if shared.is_ascii() {
-                    let a_shared = shared.map(|s| SoftAsciiStr::from_str_unchecked(s));
+                    let a_shared = shared.map(|s| SoftAsciiStr::from_unchecked(s));
                     SimpleItem::Ascii(InnerAscii::Shared(a_shared))
                 } else {
                     SimpleItem::Utf8(InnerUtf8::Shared(shared))

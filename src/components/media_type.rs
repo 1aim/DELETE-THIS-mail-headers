@@ -143,18 +143,18 @@ impl EncodableInHeader for  MediaType {
         let no_recheck_needed = handle.mail_type().is_internationalized() || !self.might_need_utf8;
 
         //type and subtype are always ascii
-        handle.write_str(SoftAsciiStr::from_str_unchecked(self.type_().as_ref()))?;
-        handle.write_char(SoftAsciiChar::from_char_unchecked('/'))?;
-        handle.write_str(SoftAsciiStr::from_str_unchecked(self.subtype().as_ref()))?;
+        handle.write_str(SoftAsciiStr::from_unchecked(self.type_().as_ref()))?;
+        handle.write_char(SoftAsciiChar::from_unchecked('/'))?;
+        handle.write_str(SoftAsciiStr::from_unchecked(self.subtype().as_ref()))?;
         for (name, value) in self.params() {
             //FIXME for now do not split params at all
             handle.mark_fws_pos();
-            handle.write_char(SoftAsciiChar::from_char_unchecked(';'))?;
+            handle.write_char(SoftAsciiChar::from_unchecked(';'))?;
             handle.write_fws();
             //names are always ascii
-            handle.write_str(SoftAsciiStr::from_str_unchecked(name.as_ref()))?;
+            handle.write_str(SoftAsciiStr::from_unchecked(name.as_ref()))?;
 
-            handle.write_char(SoftAsciiChar::from_char_unchecked('='))?;
+            handle.write_char(SoftAsciiChar::from_unchecked('='))?;
             if no_recheck_needed {
                 handle.write_str_unchecked(value.as_str_repr())?;
             } else {
@@ -180,9 +180,9 @@ impl EncodableInHeader for  MediaType {
 /////
 //fn encode_mime(mime: &MediaType, handle: &mut EncodingWriter) -> Result<()> {
 //    //TODO(upstream=mime): this can be simplified with upstem fixes to the mime crate
-//    handle.write_str(SoftAsciiStr::from_str_unchecked(mime.type_().as_str()))?;
-//    handle.write_char(SoftAsciiChar::from_char_unchecked('/'))?;
-//    handle.write_str(SoftAsciiStr::from_str_unchecked(mime.subtype().as_str()))?;
+//    handle.write_str(SoftAsciiStr::from_unchecked(mime.type_().as_str()))?;
+//    handle.write_char(SoftAsciiChar::from_unchecked('/'))?;
+//    handle.write_str(SoftAsciiStr::from_unchecked(mime.subtype().as_str()))?;
 //
 //    let mail_type = handle.mail_type();
 //    let mut split_params = HashMap::new();
@@ -203,12 +203,12 @@ impl EncodableInHeader for  MediaType {
 //            }
 //        } else {
 //            handle.mark_fws_pos();
-//            handle.write_char(SoftAsciiChar::from_char_unchecked(';'))?;
+//            handle.write_char(SoftAsciiChar::from_unchecked(';'))?;
 //            handle.mark_fws_pos();
 //            if is_encoded {
 //                //parameter names are ascii, values might not be ascii
-//                handle.write_str(SoftAsciiStr::from_str_unchecked(name.as_str()))?;
-//                handle.write_char(SoftAsciiChar::from_char_unchecked('='))?;
+//                handle.write_str(SoftAsciiStr::from_unchecked(name.as_str()))?;
+//                handle.write_char(SoftAsciiChar::from_unchecked('='))?;
 //                if let Ok(asciied) = SoftAsciiStr::from_str(value.as_str()) {
 //                    handle.write_str(asciied)?;
 //                } else {
@@ -237,18 +237,18 @@ impl EncodableInHeader for  MediaType {
 //                qtext = qtext & !had_slash;
 //
 //                if token || qtext {
-//                    handle.write_str(SoftAsciiStr::from_str_unchecked(name.as_str()))?;
-//                    handle.write_char(SoftAsciiChar::from_char_unchecked('='))?;
+//                    handle.write_str(SoftAsciiStr::from_unchecked(name.as_str()))?;
+//                    handle.write_char(SoftAsciiChar::from_unchecked('='))?;
 //                    if token {
-//                        handle.write_str(SoftAsciiStr::from_str_unchecked(value.as_str()))?;
+//                        handle.write_str(SoftAsciiStr::from_unchecked(value.as_str()))?;
 //                    } else if qtext {
-//                        handle.write_char(SoftAsciiChar::from_char_unchecked('\"'))?;
+//                        handle.write_char(SoftAsciiChar::from_unchecked('\"'))?;
 //                        handle.write_str_unchecked(value.as_str())?;
-//                        handle.write_char(SoftAsciiChar::from_char_unchecked('\"'))?;
+//                        handle.write_char(SoftAsciiChar::from_unchecked('\"'))?;
 //                    }
 //                } else {
-//                    handle.write_str(SoftAsciiStr::from_str_unchecked(name.as_str()))?;
-//                    handle.write_str(SoftAsciiStr::from_str_unchecked("*=utf8''"))?;
+//                    handle.write_str(SoftAsciiStr::from_unchecked(name.as_str()))?;
+//                    handle.write_str(SoftAsciiStr::from_unchecked("*=utf8''"))?;
 //                    let encoded = percent_encode_param_value(value.as_str());
 //                    handle.write_str(&*encoded)?;
 //                }
@@ -285,16 +285,16 @@ impl EncodableInHeader for  MediaType {
 //
 //            for (section, &(val, is_enc)) in parts.iter() {
 //                handle.mark_fws_pos();
-//                handle.write_char(SoftAsciiChar::from_char_unchecked(';'))?;
+//                handle.write_char(SoftAsciiChar::from_unchecked(';'))?;
 //                handle.mark_fws_pos();
-//                handle.write_str(SoftAsciiStr::from_str_unchecked(name))?;
-//                handle.write_char(SoftAsciiChar::from_char_unchecked('*'))?;
+//                handle.write_str(SoftAsciiStr::from_unchecked(name))?;
+//                handle.write_char(SoftAsciiChar::from_unchecked('*'))?;
 //                //OPTIMIZE (have 3 byte scretch memory as to_string 1. is ascii 2. len <= 3
-//                handle.write_str(SoftAsciiStr::from_str_unchecked(&*section.to_string()))?;
+//                handle.write_str(SoftAsciiStr::from_unchecked(&*section.to_string()))?;
 //                if is_enc {
-//                    handle.write_char(SoftAsciiChar::from_char_unchecked('*'))?;
+//                    handle.write_char(SoftAsciiChar::from_unchecked('*'))?;
 //                }
-//                handle.write_char(SoftAsciiChar::from_char_unchecked('='))?;
+//                handle.write_char(SoftAsciiChar::from_unchecked('='))?;
 //                handle.write_str_unchecked(val.as_str())?;
 //            }
 //        }

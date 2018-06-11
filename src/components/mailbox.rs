@@ -100,9 +100,9 @@ impl EncodableInHeader for  Mailbox {
             handle.write_fws();
         }
         //for now this always uses the "<user@do.main>" form even if no display-name is given
-        handle.write_char( SoftAsciiChar::from_char_unchecked('<') )?;
+        handle.write_char( SoftAsciiChar::from_unchecked('<') )?;
         self.email.encode( handle )?;
-        handle.write_char( SoftAsciiChar::from_char_unchecked('>') )?;
+        handle.write_char( SoftAsciiChar::from_unchecked('>') )?;
         Ok( () )
     }
 

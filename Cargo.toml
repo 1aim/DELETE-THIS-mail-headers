@@ -15,7 +15,7 @@ owning_ref = "0.3.3"
 serde = "1.0.38"
 serde_derive = "1.0.38"
 nom = "3.1.0"
-soft-ascii-string = "0.2"
+soft-ascii-string = "1.0"
 quoted-string = { git="https://github.com/1aim/quoted-string", version="0.5" }
 mail-common = { git="https://github.com/1aim/mail-common" }
 vec1 = { git="https://github.com/1aim/vec1" }

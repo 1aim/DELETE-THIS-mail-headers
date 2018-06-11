@@ -38,7 +38,7 @@ impl InnerAscii {
                 let buffer: Arc<String> = Arc::new(value.into());
                 let orf = OwningRef::new(buffer).map(|data: &String| {
                     // we got it from a SoftAsciiString so no check here
-                    SoftAsciiStr::from_str_unchecked(&**data)
+                    SoftAsciiStr::from_unchecked(&**data)
                 });
                 InnerAscii::Shared(orf)
             }
@@ -172,7 +172,7 @@ mod test {
         let a = InnerAscii::Owned( SoftAsciiString::from_string( "same" ).unwrap() );
         let b = InnerAscii::Shared(
             OwningRef::new(Arc::new("same".to_owned()))
-                .map(|v| SoftAsciiStr::from_str_unchecked(&**v))
+                .map(|v| SoftAsciiStr::from_unchecked(&**v))
         );
         assert_eq!( a, b );
     }
@@ -182,7 +182,7 @@ mod test {
         let a = InnerAscii::Owned( SoftAsciiString::from_string( "same" ).unwrap() );
         let b = InnerAscii::Shared(
             OwningRef::new(Arc::new("not same".to_owned()))
-                .map(|v| SoftAsciiStr::from_str_unchecked(&**v))
+                .map(|v| SoftAsciiStr::from_unchecked(&**v))
         );
         assert_ne!( a, b );
     }
@@ -215,7 +215,7 @@ mod test {
 
         assert_eq!(
             "hy",
-            InnerAscii::Owned( SoftAsciiStr::from_str_unchecked("hy").to_owned() ).as_str()
+            InnerAscii::Owned( SoftAsciiStr::from_unchecked("hy").to_owned() ).as_str()
         );
         assert_eq!(
             "hy",

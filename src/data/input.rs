@@ -32,7 +32,7 @@ impl Input {
             }
             Input( InnerUtf8::Shared( shared ) ) => {
                 if shared.is_ascii() {
-                    Ok(InnerAscii::Owned(SoftAsciiString::from_string_unchecked(&*shared)))
+                    Ok(InnerAscii::Owned(SoftAsciiString::from_unchecked(&*shared)))
                 } else {
                     Err(Input(InnerUtf8::Shared(shared)))
                 }
@@ -43,10 +43,10 @@ impl Input {
     pub fn into_ascii_item_unchecked( self ) -> InnerAscii {
         match self {
             Input( InnerUtf8::Owned( string ) ) =>
-                InnerAscii::Owned( SoftAsciiString::from_string_unchecked( string ) ),
+                InnerAscii::Owned( SoftAsciiString::from_unchecked( string ) ),
             Input( InnerUtf8::Shared( shared ) ) =>
                 InnerAscii::Owned(
-                    SoftAsciiString::from_string_unchecked(&*shared) )
+                    SoftAsciiString::from_unchecked(&*shared) )
         }
     }
 

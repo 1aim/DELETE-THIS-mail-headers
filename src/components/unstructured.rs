@@ -83,7 +83,7 @@ impl EncodableInHeader for  Unstructured {
                             handle.mark_fws_pos();
                             had_fws = true;
                         }
-                        handle.write_char( SoftAsciiChar::from_char_unchecked(ch) )?;
+                        handle.write_char( SoftAsciiChar::from_unchecked(ch) )?;
                     }
                     if !had_fws {
                         // currently this can only happen if data only consists of '\r','\n'

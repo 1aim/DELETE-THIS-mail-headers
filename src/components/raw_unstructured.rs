@@ -75,7 +75,7 @@ impl EncodableInHeader for RawUnstructured {
         if handle.mail_type().is_internationalized() {
             handle.write_utf8(self.text.as_str())
         } else {
-            handle.write_str(SoftAsciiStr::from_str_unchecked(self.text.as_str()))
+            handle.write_str(SoftAsciiStr::from_unchecked(self.text.as_str()))
         }
     }
 

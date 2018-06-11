@@ -33,8 +33,8 @@ impl EncodableInHeader for  PhraseList {
                 // <= isn't that allready fixed by FWS+ has content on line in EncodingBuffer
                 //Note that we do not want to write FWS as the following word might contains
                 // a left_padding with a MarkFWS, NowChar, Text " " but a space if fine
-                handle.write_char( SoftAsciiChar::from_char_unchecked(',') )?;
-                handle.write_char( SoftAsciiChar::from_char_unchecked(' ') )?;
+                handle.write_char( SoftAsciiChar::from_unchecked(',') )?;
+                handle.write_char( SoftAsciiChar::from_unchecked(' ') )?;
             };
             word.encode( handle )?;
 

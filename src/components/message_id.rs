@@ -62,7 +62,7 @@ impl MessageId {
             }
         }
 
-        let id = SoftAsciiString::from_string_unchecked(
+        let id = SoftAsciiString::from_unchecked(
             format!("{}@{}", left_part, right_part));
         let item = SimpleItem::Ascii(id.into());
         Ok(MessageId { message_id: item })
@@ -112,12 +112,12 @@ impl EncodableInHeader for  MessageId {
 
     fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
-        handle.write_char( SoftAsciiChar::from_char_unchecked('<') )?;
+        handle.write_char( SoftAsciiChar::from_unchecked('<') )?;
         match self.message_id {
             SimpleItem::Ascii( ref ascii ) => handle.write_str( ascii )?,
             SimpleItem::Utf8( ref utf8 ) => handle.write_utf8( utf8 )?
         }
-        handle.write_char( SoftAsciiChar::from_char_unchecked('>') )?;
+        handle.write_char( SoftAsciiChar::from_unchecked('>') )?;
         handle.mark_fws_pos();
         Ok( () )
     }
@@ -260,8 +260,8 @@ mod test {
 
     ec_test!{ new, {
         MessageId::new(
-            SoftAsciiStr::from_str_unchecked("just.me"),
-            SoftAsciiStr::from_str_unchecked("[127.0.0.1]")
+            SoftAsciiStr::from_unchecked("just.me"),
+            SoftAsciiStr::from_unchecked("[127.0.0.1]")
         )?
     } => ascii => [
         MarkFWS,

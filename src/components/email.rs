@@ -98,7 +98,7 @@ impl EncodableInHeader for  Email {
 
     fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         self.local_part.encode( handle )?;
-        handle.write_char( SoftAsciiChar::from_char_unchecked('@') )?;
+        handle.write_char( SoftAsciiChar::from_unchecked('@') )?;
         self.domain.encode( handle )?;
         Ok( () )
     }

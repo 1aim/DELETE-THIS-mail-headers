@@ -215,7 +215,7 @@ fn encode_list<'a, I>(list_iter: I, handle: &mut EncodingWriter) -> Result<(), E
 {
     sep_for!{ mailbox in list_iter;
         sep {
-            handle.write_char( SoftAsciiChar::from_char_unchecked(',') )?;
+            handle.write_char( SoftAsciiChar::from_unchecked(',') )?;
             handle.write_fws();
         };
         mailbox.encode( handle )?;

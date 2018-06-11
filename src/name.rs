@@ -30,7 +30,7 @@ impl HeaderName {
     pub fn from_ascii_unchecked<B: ?Sized>( name: &'static B ) -> HeaderName
         where B: AsRef<str>
     {
-        HeaderName { name: SoftAsciiStr::from_str_unchecked( name.as_ref() ) }
+        HeaderName { name: SoftAsciiStr::from_unchecked( name.as_ref() ) }
     }
 
     #[inline(always)]

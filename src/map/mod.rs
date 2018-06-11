@@ -688,7 +688,7 @@ mod test {
         type Component = RawUnstructured;
 
         fn name() -> HeaderName {
-            HeaderName::new(SoftAsciiStr::from_str_unchecked("X-Comment")).unwrap()
+            HeaderName::new(SoftAsciiStr::from_unchecked("X-Comment")).unwrap()
         }
 
         const VALIDATOR: Option<

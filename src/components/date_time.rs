@@ -33,7 +33,7 @@ impl DateTime {
 impl EncodableInHeader for DateTime {
 
     fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
-        let time = SoftAsciiString::from_string_unchecked(self.to_rfc2822());
+        let time = SoftAsciiString::from_unchecked(self.to_rfc2822());
         handle.write_str( &*time )?;
         Ok( () )
     }

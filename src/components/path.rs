@@ -28,11 +28,11 @@ impl EncodableInHeader for  Path {
 
     fn encode(&self, handle: &mut EncodingWriter) -> Result<(), EncodingError> {
         handle.mark_fws_pos();
-        handle.write_char(SoftAsciiChar::from_char_unchecked('<'))?;
+        handle.write_char(SoftAsciiChar::from_unchecked('<'))?;
         if let Some( mail ) = self.0.as_ref() {
             mail.encode( handle )?;
         }
-        handle.write_char(SoftAsciiChar::from_char_unchecked('>'))?;
+        handle.write_char(SoftAsciiChar::from_unchecked('>'))?;
         handle.mark_fws_pos();
         Ok( () )
     }

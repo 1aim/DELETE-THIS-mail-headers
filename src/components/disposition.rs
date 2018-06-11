@@ -135,10 +135,10 @@ impl EncodableInHeader for Disposition {
         use self::DispositionKind::*;
         match self.kind {
             Inline => {
-                handle.write_str(SoftAsciiStr::from_str_unchecked("inline"))?;
+                handle.write_str(SoftAsciiStr::from_unchecked("inline"))?;
             },
             Attachment => {
-                handle.write_str(SoftAsciiStr::from_str_unchecked("attachment"))?;
+                handle.write_str(SoftAsciiStr::from_unchecked("attachment"))?;
             }
         }
         self.file_meta.encode( handle )?;
