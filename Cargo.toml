@@ -20,7 +20,7 @@ quoted-string = "0.6"
 mail-common = { git="https://github.com/1aim/mail-common" }
 vec1 = "1.0"
 chrono = "0.4.0"
-total-order-multi-map = { git="https://github.com/1aim/total-order-multi-map" }
+total-order-multi-map = "0.3"
 
 [dependencies.mime]
 git="https://github.com/1aim/mime"
