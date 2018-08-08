@@ -120,6 +120,7 @@ fn main() {
 ```
 
 
+## Documentation
 
 Documentation can be [viewed on docs.rs](https://docs.rs/mail-headers).
 (once it is published ;) )

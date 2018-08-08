@@ -1,3 +1,7 @@
+//! Module containing the `HeaderMap`.
+//!
+//! It also contains some helper types like iterator types
+//! for the HeaderMap etc.
 use std::marker::PhantomData;
 use std::iter::ExactSizeIterator;
 use std::fmt::{self, Debug};
@@ -27,13 +31,47 @@ use super::{
 mod into_iter;
 pub use self::into_iter::*;
 
+/// The type of an validator used to check more complex header contraints.
+///
+/// An example constraint would be if a `From` header field contains more than
+/// one mailbox a `Sender` header field is required to be present.
 pub type HeaderMapValidator = fn(&HeaderMap) -> Result<(), ::error::HeaderValidationError>;
 
-
+//TODO extend example to use get,get_mut etc.
+/// A header map is a collection representing a number
+/// of mail headers in an specific order.
+///
+///
+/// # Example
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate mail_headers;
+///
+/// // just import all headers
+/// use mail_headers::*;
+/// use mail_headers::error::ComponentCreationError;
+///
+/// fn create_headers() -> Result<HeaderMap, ComponentCreationError> {
+///     headers!{
+///         // from and to can have multiple values
+///         // until specialization is stable is array
+///         // is necessary
+///         _From: [("My Fancy Display Name", "theduck@example.com")],
+///         _To: [ "unknown@example.com", ],
+///         Subject: "Who are you?"
+///     }
+/// }
+///
+/// fn main() {
+///     let headers = create_headers().unwrap();
+///     assert_eq!(headers.len(), 3);
+/// }
+/// ```
 ///
 /// # Note
 ///
-/// a number of methods implemented on HeaderMap appear in two variations,
+/// A number of methods implemented on HeaderMap appear in two variations,
 /// one which accepts a type hint (a normally zero sized struct implementing
 /// Header) and on which just accepts the type and needs to be called with
 /// the turbofish operator. The later one is prefixed by a `_` as the former

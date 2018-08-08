@@ -5,12 +5,22 @@ use ::name::HeaderName;
 // not worth the work at all
 use ::map::HeaderMapValidator;
 
+/// Trait representing a mail header.
+///
+/// **This is not meant to be implemented by hand.***
+/// Use the `def_headers` macro instead.
+///
 pub trait Header {
 
     /// the component representing the header-field, e.g. `Unstructured` for `Subject`
     type Component;
 
     //FIXME[rust/const fn]: make this a associated constant
+    /// a method returning the header name
+    ///
+    /// # Note:
+    /// Once `const fn` is stable this will be changed to
+    /// a associated constant.
     fn name() -> HeaderName;
 
     /// A function which is meant to be called with a reference

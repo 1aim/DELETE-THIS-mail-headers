@@ -1,3 +1,11 @@
+//! This modules contains all components provided by this library.
+//!
+//! A mail (header) component is basically the body of a header field
+//! in the mails header section. E.g. in `Subject: Hy There`, the
+//! `Hy There` would be represented by an component (in this case
+//! the `Unstructured` component).
+//!
+//!
 pub mod utils;
 
 //reexport our components

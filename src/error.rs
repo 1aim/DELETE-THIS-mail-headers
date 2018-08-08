@@ -1,3 +1,4 @@
+//! module contains the (new) errors emitted by this crate
 use std::fmt::{self, Display};
 
 use failure::{Fail, Context, Error as FError, Backtrace};
@@ -54,6 +55,8 @@ impl From<Context<BuildInValidationError>> for HeaderValidationError {
     }
 }
 
+/// The build-in error variants (error kinds) which can be returned
+/// when running a header map validator.
 #[derive(Copy, Clone, Debug, Fail, PartialEq, Eq, Hash)]
 pub enum BuildInValidationError {
 
@@ -105,6 +108,11 @@ macro_rules! header_validation_bail {
 }
 
 
+/// Helper type which is either a `Backtrace` or an full `failure::Error`.
+///
+/// This can be used to either just contain a backtrace into an custom
+/// error or to chain it in front of another error without adding another
+/// backtrace, depending on the creating context.
 #[derive(Debug)]
 pub enum ChainTail {
     Backtrace(Backtrace),
