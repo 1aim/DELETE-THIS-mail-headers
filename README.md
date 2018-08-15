@@ -30,7 +30,7 @@ A header map is a collection representing a number
 of mail headers in an specific order. It can be
 created like this:
 
-```
+```rust
 #[macro_use]
 extern crate mail_headers;
 
@@ -52,6 +52,14 @@ fn create_headers() -> Result<HeaderMap, ComponentCreationError> {
 fn main() {
     let headers = create_headers().unwrap();
     assert_eq!(headers.len(), 3);
+
+    if let Some(subject) = headers.get_single(Subject) {
+        // as long a you don't play around with custom headers AND
+        // don't mix multiple implementations for the same header
+        // `.unwrap()` is just fine.
+        let subject = subject.expect("mixed different Subject header implementations");
+        println!("found subject: {}", subject);
+    }
 }
 ```
 
@@ -72,7 +80,7 @@ is not nice, for most use cases there is no need to
 generate custom headers and in the future this might be
 circumvented by auto-generating the name with a proc-derive.
 
-```
+```rust
 #[macro_use]
 extern crate mail_headers;
 
@@ -95,11 +103,11 @@ use mail_headers::components;
 
 // If in scope both can be used in the `headers!` macro,
 // like any other header.
-// 
+//
 def_headers! {
     // the name of the auto-generated test
     test_name: validate_header_names,
-    
+
     // the scope from which all components should be imported
     // E.g. `DateTime` refers to `components::DateTime`.
     scope: components,
