@@ -1,4 +1,5 @@
 use std::result::{ Result as StdResult };
+use std::fmt::{self, Display};
 
 use soft_ascii_string::SoftAsciiString;
 
@@ -83,6 +84,12 @@ impl HeaderTryFrom<String> for Input
 impl Into<String> for Input {
     fn into(self) -> String {
         self.0.into()
+    }
+}
+
+impl Display for Input {
+    fn fmt(&self, fter: &mut fmt::Formatter) -> fmt::Result {
+        fter.write_str(self.as_str())
     }
 }
 

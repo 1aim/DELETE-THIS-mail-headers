@@ -1,4 +1,5 @@
 use std::ops::{ Deref, DerefMut};
+use std::fmt::{self, Display};
 
 use failure::Fail;
 use soft_ascii_string::SoftAsciiChar;
@@ -17,6 +18,12 @@ use super::utils::text_partition::{partition, Partition};
 pub struct Unstructured {
     //FEATUR_TODO(non_utf8_input): split into parts each possibke having their own encoding
     text: Input,
+}
+
+impl Display for Unstructured {
+    fn fmt(&self, fter: &mut fmt::Formatter) -> fmt::Result {
+        fter.write_str(self.as_str())
+    }
 }
 
 impl Deref for Unstructured {
