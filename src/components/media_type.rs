@@ -1,4 +1,6 @@
 use std::ops::Deref;
+use std::str::FromStr;
+
 use soft_ascii_string::{SoftAsciiStr,SoftAsciiChar};
 
 
@@ -73,6 +75,13 @@ impl MediaType {
         where N: AsRef<str>, V: AsRef<str>
     {
         self.media_type.set_param(name, value)
+    }
+}
+
+impl FromStr for MediaType {
+    type Err = ComponentCreationError;
+    fn from_str(inp: &str) -> Result<Self, Self::Err> {
+        MediaType::parse(inp)
     }
 }
 
