@@ -22,34 +22,47 @@ pub struct Disposition {
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 struct DispositionParameters(FileMeta);
 
+/// Represents what kind of disposition is used (Inline/Attachment)
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum DispositionKind {
-    Inline, Attachment
+    /// Display the body "inline".
+    ///
+    /// This disposition is mainly used to add some additional content
+    /// and then refers to it through its cid (e.g. in a html mail).
+    Inline,
+    /// Display the body as an attachment to of the mail.
+    Attachment
 }
 
 
 impl Disposition {
 
+    /// Create a inline disposition with default parameters.
     pub fn inline() -> Self {
         Disposition::new( DispositionKind::Inline, FileMeta::default() )
     }
 
+    /// Create a attachment disposition with default parameters.
     pub fn attachment() -> Self {
         Disposition::new( DispositionKind::Attachment, FileMeta::default() )
     }
 
+    /// Create a new disposition with given parameters.
     pub fn new( kind: DispositionKind, file_meta: FileMeta ) -> Self {
         Disposition { kind, file_meta: DispositionParameters( file_meta ) }
     }
 
+    /// Return which kind of disposition this represents.
     pub fn kind( &self ) -> DispositionKind {
         self.kind
     }
 
+    /// Returns the parameters associated with the disposition.
     pub fn file_meta( &self ) -> &FileMeta {
         &self.file_meta
     }
 
+    /// Returns a mutable reference to the parameters associated with the disposition.
     pub fn file_meta_mut( &mut self ) -> &mut FileMeta {
         &mut self.file_meta
     }
