@@ -29,7 +29,8 @@
 //! # extern crate mail_headers;
 //!
 //! // just import all headers
-//! use mail_headers::*;
+//! use mail_headers::headers::*;
+//! use mail_headers::HeaderMap;
 //! use mail_headers::error::ComponentCreationError;
 //!
 //! fn create_headers() -> Result<HeaderMap, ComponentCreationError> {
@@ -70,7 +71,7 @@
 //! # #[macro_use]
 //! # extern crate mail_headers;
 //!
-//! use mail_headers::components;
+//! use mail_headers::header_components;
 //!
 //! // this will define two headers `XFooEmail` and `XBarMailbox`
 //! // the first will add a header field named `X-Foo-Email` with
@@ -96,7 +97,7 @@
 //!
 //!     // the scope from which all components should be imported
 //!     // E.g. `DateTime` refers to `components::DateTime`.
-//!     scope: components,
+//!     scope: header_components,
 //!
 //!     // definitions of the headers or the form
 //!     // <type_name>, unchecked { <filed_name> }, <component>, <validator>
@@ -152,15 +153,14 @@ pub mod data;
 mod header_macro;
 #[macro_use]
 pub mod map;
-pub mod components;
-mod header_impl;
+pub mod header_components;
+pub mod headers;
 
 pub use self::name::*;
 pub use self::header::*;
 pub use self::convert::*;
 pub use self::header_macro::*;
 pub use self::map::HeaderMap;
-pub use self::header_impl::*;
 
 
 // I can not reexport a private think anymore, so I need to reexport the

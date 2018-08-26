@@ -228,7 +228,7 @@ deref0!{ +mut MailboxList => Vec1<Mailbox> }
 
 #[cfg(test)]
 mod test {
-    use components::{ Mailbox, Email, Phrase };
+    use ::header_components::{ Mailbox, Email, Phrase };
     use super::*;
 
 

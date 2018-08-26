@@ -49,7 +49,8 @@ pub type HeaderMapValidator = fn(&HeaderMap) -> Result<(), ::error::HeaderValida
 /// # extern crate mail_headers;
 ///
 /// // just import all headers
-/// use mail_headers::*;
+/// use mail_headers::HeaderMap;
+/// use mail_headers::headers::*;
 /// use mail_headers::error::ComponentCreationError;
 ///
 /// fn create_headers() -> Result<HeaderMap, ComponentCreationError> {
@@ -367,7 +368,7 @@ impl<'a, H> Debug for TypedBodies<'a, H>
 /// ```
 /// # #[macro_use]
 /// # extern crate mail_headers;
-/// # use mail_headers::*;
+/// # use mail_headers::headers::*;
 /// # use mail_headers::error::ComponentCreationError;
 /// # fn main() { (|| -> Result<(), ComponentCreationError> {
 /// let map = headers! {
@@ -462,7 +463,7 @@ mod test {
 
     use ::HeaderTryFrom;
     use ::error::{ComponentCreationError, HeaderValidationError};
-    use ::components::RawUnstructured;
+    use ::header_components::RawUnstructured;
 
     use super::*;
 
@@ -493,10 +494,10 @@ mod test {
 
 
     mod good_headers {
-        use components;
+        use ::header_components;
         def_headers! {
             test_name: validate_header_names,
-            scope: components,
+            scope: header_components,
             Subject, unchecked { "Subject" }, RawUnstructured, maxOne,
             Comments, unchecked { "Comments" }, RawUnstructured, None
         }

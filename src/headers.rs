@@ -1,6 +1,6 @@
 
 
-use components;
+use ::header_components;
 use self::validators::{
     from as validator_from,
     resent_any as validator_resent_any
@@ -8,7 +8,7 @@ use self::validators::{
 
 def_headers! {
     test_name: validate_header_names,
-    scope: components,
+    scope: header_components,
     /// (rfc5322)
     Date,         unchecked { "Date"          },  DateTime,       maxOne,
     /// (rfc5322)
@@ -184,9 +184,9 @@ mod validators {
 
 #[cfg(test)]
 mod test {
-    use components::DateTime;
-    use ::{
-        HeaderMap,
+    use ::header_components::DateTime;
+    use ::HeaderMap;
+    use ::headers::{
         _From, ResentFrom, ResentTo, ResentDate,
         Sender, ResentSender, Subject
     };

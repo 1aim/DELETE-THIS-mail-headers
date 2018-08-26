@@ -114,7 +114,7 @@ impl EncodableInHeader for  Mailbox {
 
 #[cfg(test)]
 mod test {
-    use components::{ Email, Phrase };
+    use ::header_components::{ Email, Phrase };
     use super::*;
 
     ec_test!{ email_only, {
