@@ -145,7 +145,7 @@ impl HeaderMap {
     }
 
     /// returns true if the headermap contains a header with the same name
-    pub fn contains<H: HasHeaderName>(&self, name: H ) -> bool {
+    pub fn contains<H: HasHeaderName>(&self, name: H) -> bool {
         self.inner_map.contains_key(name.get_name())
     }
 
@@ -179,24 +179,24 @@ impl HeaderMap {
     /// Accepts both `HeaderName` or a type implementing `Header`.
     ///
     #[inline]
-    pub fn get_untyped<H: HasHeaderName>( &self, name: H ) -> Option<UntypedBodies> {
-        self.inner_map.get( name.get_name() )
+    pub fn get_untyped<H: HasHeaderName>(&self, name: H) -> Option<UntypedBodies> {
+        self.inner_map.get(name.get_name())
     }
 
     /// Returns all header bodies for a given header
     #[inline(always)]
-    pub fn get<H>( &self, _type_hint: H) -> Option<TypedBodies<H>>
+    pub fn get<H>(&self, _type_hint: H) -> Option<TypedBodies<H>>
         where H: Header, H::Component: EncodableInHeader
     {
         self._get::<H>()
     }
 
     /// Returns all header bodies for a given header
-    pub fn _get<H>( &self ) -> Option<TypedBodies<H>>
+    pub fn _get<H>(&self) -> Option<TypedBodies<H>>
         where H: Header, H::Component: EncodableInHeader
     {
-        self.get_untyped( H::name() )
-            .map( |untyped| untyped.into() )
+        self.get_untyped(H::name())
+            .map(|untyped| untyped.into())
     }
 
     /// Inserts given header into the header map.
@@ -224,7 +224,7 @@ impl HeaderMap {
     /// type parameter but not as type hint. For this cases `_insert` exist, which doesn't
     /// do any conversion and accepts `H` only as generic type parameter.
     ///
-    pub fn insert<H, C>( &mut self, _htype_hint: H, body: C ) -> Result<usize, ComponentCreationError>
+    pub fn insert<H, C>(&mut self, _htype_hint: H, body: C) -> Result<usize, ComponentCreationError>
         where H: Header,
               H::Component: EncodableInHeader,
               C: HeaderTryInto<H::Component>
@@ -255,7 +255,7 @@ impl HeaderMap {
     /// in the order they where inserted into other.
     /// Additionally all validators in other get inserted
     /// into this map.
-    pub fn combine(&mut self, other: HeaderMap )  -> &mut Self {
+    pub fn combine(&mut self, other: HeaderMap)  -> &mut Self {
         self.validators.extend(other.validators);
         self.inner_map.extend(other.inner_map);
         self
@@ -264,7 +264,7 @@ impl HeaderMap {
     /// remove all headers with the given header name
     ///
     /// returns true, if at last one header was removed
-    pub fn remove_by_name<H: HasHeaderName>(&mut self, name: H ) -> bool {
+    pub fn remove_by_name<H: HasHeaderName>(&mut self, name: H) -> bool {
         self.inner_map.remove_all(name.get_name())
     }
 
