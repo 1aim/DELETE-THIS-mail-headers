@@ -1,7 +1,7 @@
 [package]
 name = "mail-headers"
 description = "[internal/mail-api] header parts for the mail-api crate (inkl. header map and standard header impl)"
-version = "0.2.0"
+version = "0.4.0-wip"
 authors = ["Philipp Korber <philippkorber@gmail.com>"]
 documentation = "https://docs.rs/mail-headers"
 keywords = []
@@ -10,17 +10,17 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/1aim/mail-headers"
 
 [dependencies]
-failure = "0.1.1"
-owning_ref = "0.3.3"
-serde = "1.0.38"
-serde_derive = "1.0.38"
+failure = "0.1"
+owning_ref = "0.4"
+serde = "1"
+serde_derive = "1"
 nom = "3.1.0"
-soft-ascii-string = "1.0"
+soft-ascii-string = "1"
 quoted-string = "0.6"
 mail-common = { git="https://github.com/1aim/mail-common" }
-vec1 = "1.0"
-chrono = "0.4.0"
-total-order-multi-map = "0.3"
+vec1 = "1"
+chrono = "0.4"
+total-order-multi-map = "0.4.2"
 
 [dependencies.mime]
 git="https://github.com/1aim/mime"

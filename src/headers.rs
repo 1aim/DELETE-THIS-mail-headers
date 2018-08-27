@@ -131,9 +131,9 @@ mod validators {
         // whatever header put them in has also put in
         // this bit of validation )
         let needs_sender =
-            map.get(_From).map(|bodies|
-                bodies.filter_map(|res| res.ok()).any(|list| list.len() > 1 )
-            ).unwrap_or(false);
+            map.get(_From)
+                .filter_map(|res| res.ok())
+                .any(|list| list.len() > 1);
 
         if needs_sender && !map.contains(Sender) {
             //this is the wrong bail...
@@ -194,19 +194,19 @@ mod test {
     #[test]
     fn from_validation_normal() {
         let mut map = HeaderMap::new();
-        map.insert(_From, [("Mr. Peté", "pete@nixmail.nixdomain")]).unwrap();
-        map.insert(Subject, "Ok").unwrap();
+        map.set(_From, [("Mr. Peté", "pete@nixmail.nixdomain")]).unwrap();
+        map.set(Subject, "Ok").unwrap();
 
         assert_ok!(map.use_contextual_validators());
     }
     #[test]
     fn from_validation_multi_err() {
         let mut map = HeaderMap::new();
-        map.insert(_From, (
+        map.set(_From, (
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
         )).unwrap();
-        map.insert(Subject, "Ok").unwrap();
+        map.set(Subject, "Ok").unwrap();
 
         assert_err!(map.use_contextual_validators());
     }
@@ -214,12 +214,12 @@ mod test {
     #[test]
     fn from_validation_multi_ok() {
         let mut map = HeaderMap::new();
-        map.insert(_From, (
+        map.set(_From, (
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
         )).unwrap();
-        map.insert(Sender, "abx@d.e").unwrap();
-        map.insert(Subject, "Ok").unwrap();
+        map.set(Sender, "abx@d.e").unwrap();
+        map.set(Subject, "Ok").unwrap();
 
         assert_ok!(map.use_contextual_validators());
     }
@@ -227,25 +227,25 @@ mod test {
     #[test]
     fn resent_no_date_err() {
         let mut map = HeaderMap::new();
-        map.insert(ResentFrom,["a@b.c"]).unwrap();
+        map.set(ResentFrom,["a@b.c"]).unwrap();
         assert_err!(map.use_contextual_validators());
     }
 
     #[test]
     fn resent_with_date() {
         let mut map = HeaderMap::new();
-        map.insert(ResentFrom,["a@b.c"]).unwrap();
-        map.insert(ResentDate, DateTime::now()).unwrap();
+        map.add(ResentFrom,["a@b.c"]).unwrap();
+        map.add(ResentDate, DateTime::now()).unwrap();
         assert_ok!(map.use_contextual_validators());
     }
 
     #[test]
     fn resent_no_date_err_second_block() {
         let mut map = HeaderMap::new();
-        map.insert(ResentDate, DateTime::now()).unwrap();
-        map.insert(ResentFrom,["a@b.c"]).unwrap();
-        map.insert(ResentTo, ["e@f.d"]).unwrap();
-        map.insert(ResentFrom, ["ee@ee.e"]).unwrap();
+        map.add(ResentDate, DateTime::now()).unwrap();
+        map.add(ResentFrom,["a@b.c"]).unwrap();
+        map.add(ResentTo, ["e@f.d"]).unwrap();
+        map.add(ResentFrom, ["ee@ee.e"]).unwrap();
 
         assert_err!(map.use_contextual_validators());
     }
@@ -253,11 +253,11 @@ mod test {
     #[test]
     fn resent_with_date_second_block() {
         let mut map = HeaderMap::new();
-        map.insert(ResentDate, DateTime::now()).unwrap();
-        map.insert(ResentFrom,["a@b.c"]).unwrap();
-        map.insert(ResentTo, ["e@f.d"]).unwrap();
-        map.insert(ResentFrom, ["ee@ee.e"]).unwrap();
-        map.insert(ResentDate, DateTime::now()).unwrap();
+        map.add(ResentDate, DateTime::now()).unwrap();
+        map.add(ResentFrom,["a@b.c"]).unwrap();
+        map.add(ResentTo, ["e@f.d"]).unwrap();
+        map.add(ResentFrom, ["ee@ee.e"]).unwrap();
+        map.add(ResentDate, DateTime::now()).unwrap();
 
         assert_ok!(map.use_contextual_validators());
     }
@@ -265,8 +265,8 @@ mod test {
     #[test]
     fn resent_multi_mailbox_from_no_sender() {
         let mut map = HeaderMap::new();
-        map.insert(ResentDate, DateTime::now()).unwrap();
-        map.insert(ResentFrom, ["a@b.c","e@c.d"]).unwrap();
+        map.add(ResentDate, DateTime::now()).unwrap();
+        map.add(ResentFrom, ["a@b.c","e@c.d"]).unwrap();
 
         assert_err!(map.use_contextual_validators());
     }
@@ -274,9 +274,9 @@ mod test {
     #[test]
     fn resent_multi_mailbox_from_with_sender() {
         let mut map = HeaderMap::new();
-        map.insert(ResentDate, DateTime::now()).unwrap();
-        map.insert(ResentFrom, ["a@b.c","e@c.d"]).unwrap();
-        map.insert(ResentSender, "a@b.c").unwrap();
+        map.add(ResentDate, DateTime::now()).unwrap();
+        map.add(ResentFrom, ["a@b.c","e@c.d"]).unwrap();
+        map.add(ResentSender, "a@b.c").unwrap();
 
         assert_ok!(map.use_contextual_validators());
     }
