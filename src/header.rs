@@ -83,6 +83,8 @@ impl<H> HasHeaderName for H
     }
 }
 
+pub trait MaxOneMarker: HeaderKind {}
+
 #[derive(Clone)]
 pub struct Header<H>
     where H: HeaderKind

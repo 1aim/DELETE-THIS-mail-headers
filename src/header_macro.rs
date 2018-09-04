@@ -97,6 +97,8 @@ macro_rules! def_headers {
                 const VALIDATOR: ::std::option::Option<$crate::map::HeaderMapValidator> =
                         def_headers!{ _PRIV_mk_validator $validator };
             }
+
+            def_headers!{ _PRIV_mk_marker_impl $name, $maxOne }
         )+
 
         //TODO warn if header type name and header name diverges
@@ -138,11 +140,17 @@ macro_rules! def_headers {
             }
         }
     );
+    (_PRIV_mk_marker_impl $name:ident, multi) => ();
+    (_PRIV_mk_marker_impl $name:ident, maxOne) => (
+        impl $crate::MaxOneMarker for $name {}
+    );
+    (_PRIV_mk_marker_impl $name:ident, $other:ident) => (def_headers!{ _PRIV_max_one_err $other });
     (_PRIV_mk_validator None) => ({ None });
     (_PRIV_mk_validator $validator:ident) => ({ Some($validator) });
     (_PRIV_mk_max_one multi) => ({ false });
     (_PRIV_mk_max_one maxOne) => ({ true });
-    (_PRIV_mk_max_one $other:ident) => (
+    (_PRIV_mk_max_one $other:ident) => (def_headers!{ _PRIV_max_one_err $other });
+    (_PRIV_max_one_err $other:ident) => (
         compile_error!(concat!(
             "maxOne column can only contain `maxOne` or `multi`, got: ",
             stringify!($other)

@@ -28,7 +28,8 @@ use ::name::{
 
 use ::header::{
     Header, HeaderKind,
-    HeaderObj, HeaderObjTrait
+    HeaderObj, HeaderObjTrait,
+    MaxOneMarker
 };
 
 mod into_iter;
@@ -168,19 +169,44 @@ impl HeaderMap {
         self.inner_map.contains_key(name.get_name())
     }
 
-    /// Returns the first header field ignoring any additional fields with the same name
+    /// Returns the single header associated with the given header kind.
+    ///
+    /// As this uses the `MaxOneMarker` trait which _should_ only be implemented
+    /// for `HeaderKind` impl with `MAX_ONE == true` this function can only
+    /// be used when it's fine to ignore the possible case of more than
+    /// one header of the given kind being in the same map.
+    ///
+    /// # Type Hint
+    ///
+    /// The type hint passed in is for ergonomics, e.g. so
+    /// that it's possible to write code like `map.get_single(Subject)`
+    /// if this gets in the way `_get_single` can be used which would
+    /// lead to code like `map._get_single::<Subject>()`.
+    ///
+    /// # Panic (debug)
+    ///
+    /// If debug assertions are enabled and this method is called with
+    /// a `HeaderKind` impl. which wrongly implements `MaxOneMarker` (
+    /// it implements it and has `MAX_ONE == false`) this will panic.
+    ///
+    /// As this error can only happen when wrongly implementing a trait
+    /// normally not implemented by hand this check is only done if
+    /// debug assertions are enabled.
     #[inline(always)]
     pub fn get_single<'a, H>(&'a self, _type_hint: H)
         -> Option<Result<&'a Header<H>, HeaderTypeError>>
-        where H: HeaderKind
+        where H: MaxOneMarker
     {
         self._get_single::<H>()
     }
 
-    /// Returns a header component associated with the given header type.
+    /// A variation of `get_single` which doesn't require passing in a type hint.
+    ///
+    /// Normally using `get_single` is more ergonomic, except if you write a function
+    /// which abstracts over it in which case using `_get_single` can be better.
     pub fn _get_single<'a, H>(&'a self)
         -> Option<Result<&'a Header<H>, HeaderTypeError>>
-        where H: HeaderKind
+        where H: MaxOneMarker
     {
         let mut bodies = self.get_untyped(H::name());
         bodies.next().map(|untyped| {
