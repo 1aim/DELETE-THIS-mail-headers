@@ -64,3 +64,16 @@ macro_rules! assert_err {
     });
 }
 
+#[cfg(test)]
+macro_rules! test {
+    ($name:ident $code:block) => (
+        #[test]
+        fn $name() {
+            fn inner() -> Result<(), $crate::error::ComponentCreationError> {
+                $code;
+                Ok(())
+            }
+            inner().unwrap();
+        }
+    );
+}

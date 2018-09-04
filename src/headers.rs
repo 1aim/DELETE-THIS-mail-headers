@@ -116,8 +116,7 @@ def_headers! {
 mod validators {
     use std::collections::HashMap;
 
-    use common::encoder::EncodableInHeader;
-    use ::{ HeaderMap, Header, HeaderName };
+    use ::{ HeaderMap, HeaderKind, HeaderName, HeaderObj };
     use ::error::HeaderValidationError;
 
     use super::{ _From, ResentFrom, Sender, ResentSender, ResentDate };
@@ -143,7 +142,7 @@ mod validators {
     }
 
     fn validate_resent_block<'a>(
-            block: &HashMap<HeaderName, &'a EncodableInHeader>
+            block: &HashMap<HeaderName, &'a HeaderObj>
     ) -> Result<(), HeaderValidationError> {
         if !block.contains_key(&ResentDate::name()) {
             //this is the wrong bail...
@@ -153,7 +152,7 @@ mod validators {
             //no Resend-From? => no problem
             block.get(&ResentFrom::name())
                 //can't cast? => not my problem/responsibility
-                .and_then(|tobj| tobj.downcast_ref::<<ResentFrom as Header>::Component>())
+                .and_then(|tobj| tobj.downcast_ref::<ResentFrom>())
                 .map(|list| list.len() > 1)
                 .unwrap_or(false);
 
@@ -185,99 +184,92 @@ mod validators {
 #[cfg(test)]
 mod test {
     use ::header_components::DateTime;
-    use ::HeaderMap;
+    use ::{HeaderMap, HeaderKind};
     use ::headers::{
         _From, ResentFrom, ResentTo, ResentDate,
         Sender, ResentSender, Subject
     };
 
-    #[test]
-    fn from_validation_normal() {
+    test!(from_validation_normal {
         let mut map = HeaderMap::new();
-        map.set(_From, [("Mr. Peté", "pete@nixmail.nixdomain")]).unwrap();
-        map.set(Subject, "Ok").unwrap();
+        map.set(_From   ::body( [("Mr. Peté", "pete@nixmail.example")] )?);
+        map.set(Subject ::body( "Ok"                                   )?);
 
         assert_ok!(map.use_contextual_validators());
-    }
-    #[test]
-    fn from_validation_multi_err() {
+    });
+
+    test!(from_validation_multi_err {
         let mut map = HeaderMap::new();
-        map.set(_From, (
+        map.set(_From::body((
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
-        )).unwrap();
-        map.set(Subject, "Ok").unwrap();
+        ))?);
+        map.set(Subject::body("Ok")?);
 
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn from_validation_multi_ok() {
+    test!(from_validation_multi_ok {
         let mut map = HeaderMap::new();
-        map.set(_From, (
+        map.set(_From::body((
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
-        )).unwrap();
-        map.set(Sender, "abx@d.e").unwrap();
-        map.set(Subject, "Ok").unwrap();
+        ))?);
+        map.set(Sender  ::body(  "abx@d.e" )?);
+        map.set(Subject ::body(  "Ok"      )?);
 
         assert_ok!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_no_date_err() {
+    test!(resent_no_date_err {
         let mut map = HeaderMap::new();
-        map.set(ResentFrom,["a@b.c"]).unwrap();
+        map.set(ResentFrom ::body( ["a@b.c"] )?);
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_with_date() {
+    test!(resent_with_date {
         let mut map = HeaderMap::new();
-        map.add(ResentFrom,["a@b.c"]).unwrap();
-        map.add(ResentDate, DateTime::now()).unwrap();
+        map.add(ResentFrom ::body( ["a@b.c"]       )?);
+        map.add(ResentDate ::body( DateTime::now() )?);
         assert_ok!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_no_date_err_second_block() {
+    test!(resent_no_date_err_second_block {
         let mut map = HeaderMap::new();
-        map.add(ResentDate, DateTime::now()).unwrap();
-        map.add(ResentFrom,["a@b.c"]).unwrap();
-        map.add(ResentTo, ["e@f.d"]).unwrap();
-        map.add(ResentFrom, ["ee@ee.e"]).unwrap();
+        map.add(ResentDate ::body( DateTime::now() )?);
+        map.add(ResentFrom ::body( ["a@b.c"]       )?);
+        map.add(ResentTo   ::body( ["e@f.d"]       )?);
+        map.add(ResentFrom ::body( ["ee@ee.e"]     )?);
 
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_with_date_second_block() {
+    test!(resent_with_date_second_block {
         let mut map = HeaderMap::new();
-        map.add(ResentDate, DateTime::now()).unwrap();
-        map.add(ResentFrom,["a@b.c"]).unwrap();
-        map.add(ResentTo, ["e@f.d"]).unwrap();
-        map.add(ResentFrom, ["ee@ee.e"]).unwrap();
-        map.add(ResentDate, DateTime::now()).unwrap();
+        map.add(ResentDate ::body( DateTime::now() )?);
+        map.add(ResentFrom ::body( ["a@b.c"]       )?);
+        map.add(ResentTo   ::body( ["e@f.d"]       )?);
+        map.add(ResentFrom ::body( ["ee@ee.e"]     )?);
+        map.add(ResentDate ::body( DateTime::now() )?);
 
         assert_ok!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_multi_mailbox_from_no_sender() {
+    test!(resent_multi_mailbox_from_no_sender {
+
         let mut map = HeaderMap::new();
-        map.add(ResentDate, DateTime::now()).unwrap();
-        map.add(ResentFrom, ["a@b.c","e@c.d"]).unwrap();
+        map.add(ResentDate ::body( DateTime::now()   )?);
+        map.add(ResentFrom ::body( ["a@b.c","e@c.d"] )?);
 
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_multi_mailbox_from_with_sender() {
+    test!(resent_multi_mailbox_from_with_sender {
         let mut map = HeaderMap::new();
-        map.add(ResentDate, DateTime::now()).unwrap();
-        map.add(ResentFrom, ["a@b.c","e@c.d"]).unwrap();
-        map.add(ResentSender, "a@b.c").unwrap();
-
+        map.add(ResentDate   ::body( DateTime::now()   )?);
+        map.add(ResentFrom   ::body( ["a@b.c","e@c.d"] )?);
+        map.add(ResentSender ::body( "a@b.c"           )?);
         assert_ok!(map.use_contextual_validators());
-    }
+    });
+
 }

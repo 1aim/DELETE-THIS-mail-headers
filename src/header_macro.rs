@@ -83,7 +83,7 @@ macro_rules! def_headers {
             #[derive(Default, Copy, Clone)]
             pub struct $name;
 
-            impl $crate::Header for  $name {
+            impl $crate::HeaderKind for $name {
 
                 type Component = $scope::$component;
 
