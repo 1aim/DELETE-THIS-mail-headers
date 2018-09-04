@@ -1,7 +1,7 @@
 [package]
 name = "mail-headers"
 description = "[internal/mail-api] header parts for the mail-api crate (inkl. header map and standard header impl)"
-version = "0.4.0-wip"
+version = "0.4.0"
 authors = ["Philipp Korber <philippkorber@gmail.com>"]
 documentation = "https://docs.rs/mail-headers"
 keywords = []
