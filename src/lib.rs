@@ -100,9 +100,9 @@
 //!     scope: header_components,
 //!
 //!     // definitions of the headers or the form
-//!     // <type_name>, unchecked { <filed_name> }, <component>, <validator>
-//!     XFooEmail, unchecked { "X-Foo-Email"      }, Email ,   maxOne,
-//!     XBarMailbox, unchecked { "X-Bar-Mailbox" }, Mailbox, None
+//!     // <type_name>, unchecked { <filed_name> }, <component>, <maxOne>, <validator>
+//!     XFooEmail, unchecked { "X-Foo-Email"      }, Email ,   maxOne, None,
+//!     XBarMailbox, unchecked { "X-Bar-Mailbox" }, Mailbox,   multi,  None
 //! }
 //!
 //! fn main() {

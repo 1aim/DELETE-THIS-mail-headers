@@ -589,8 +589,8 @@ mod test {
         def_headers! {
             test_name: validate_header_names,
             scope: header_components,
-            Subject, unchecked { "Subject" }, RawUnstructured, maxOne,
-            Comments, unchecked { "Comments" }, RawUnstructured, None
+            Subject, unchecked { "Subject" }, RawUnstructured, maxOne, None,
+            Comments, unchecked { "Comments" }, RawUnstructured, multi, None
         }
     }
 
@@ -598,8 +598,8 @@ mod test {
         def_headers! {
             test_name: validate_header_names,
             scope: super,
-            Subject, unchecked { "Subject" },  OtherComponent, maxOne,
-            Comments, unchecked { "Comments" }, OtherComponent, None
+            Subject, unchecked { "Subject" },  OtherComponent, maxOne, None,
+            Comments, unchecked { "Comments" }, OtherComponent, multi, None
         }
     }
 
@@ -816,6 +816,8 @@ mod test {
         const VALIDATOR: Option<
             fn(&HeaderMap)-> Result<(), HeaderValidationError>
         > = Some(__validator);
+
+        const MAX_ONE: bool = false;
     }
 
     //some stupid but simple validator

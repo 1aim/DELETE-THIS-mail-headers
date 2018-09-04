@@ -52,6 +52,17 @@ pub trait HeaderKind: Clone + Default + 'static {
     /// an error should be returned.
     const VALIDATOR: Option<HeaderMapValidator>;
 
+    /// I true this will assure that the header is at most one time in a header map.
+    ///
+    /// This is similar to `VALIDATOR` (and can be archived through one) but in difference
+    /// to any `VALIDATOR` this is already assured when inserting a header with MAX_ONE set
+    /// to true in a header map. It exists so that the header map can do, what is most
+    /// intuitive, replacing insertion for all `MAX_ONE` headers (like in a normal map) but
+    /// use adding insertion for all other header (like in a multi map).
+    ///
+    /// Most headers have this set to true.
+    const MAX_ONE: bool;
+
 
     fn body<H>(body: H) -> Result<Header<Self>, ComponentCreationError>
         where H: HeaderTryInto<Self::Component>
@@ -117,7 +128,7 @@ pub type HeaderObj = dyn HeaderObjTrait;
 
 pub trait HeaderObjTrait: Sync + Send + ::std::any::Any + Debug {
     fn name(&self) -> HeaderName;
-    // fn is_max_one(&self) -> bool;
+    fn is_max_one(&self) -> bool;
     fn validator(&self) -> Option<HeaderMapValidator>;
     fn encode(&self, encoder: &mut EncodingWriter) -> Result<(), EncodingError>;
     fn boxed_clone(&self) -> Box<HeaderObj>;
@@ -135,9 +146,9 @@ impl<H> HeaderObjTrait for Header<H>
         H::name()
     }
 
-    // fn is_max_one(&self) -> bool {
-    //     H::MAX_ONE
-    // }
+    fn is_max_one(&self) -> bool {
+        H::MAX_ONE
+    }
 
     fn validator(&self) -> Option<HeaderMapValidator> {
         H::VALIDATOR
