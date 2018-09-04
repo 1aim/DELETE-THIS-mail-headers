@@ -23,10 +23,12 @@ use ::error::{
     HeaderValidationError, BuildInValidationError
 };
 
-use super::{
-    HeaderName,
-    Header,
-    HasHeaderName
+use ::name::{
+    HeaderName, HasHeaderName
+};
+
+use ::header::{
+    Header, HeaderObj, HeaderBody
 };
 
 mod into_iter;
@@ -846,6 +848,7 @@ mod test {
         );
     }
 
+    #[derive(Default, Copy, Clone)]
     struct XComment;
     impl Header for XComment {
         type Component = RawUnstructured;

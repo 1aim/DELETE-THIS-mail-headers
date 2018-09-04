@@ -80,6 +80,7 @@ macro_rules! def_headers {
     ) => (
         $(
             $(#[$attr])*
+            #[derive(Default, Copy, Clone)]
             pub struct $name;
 
             impl $crate::Header for  $name {
