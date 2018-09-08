@@ -63,7 +63,6 @@ pub trait HeaderKind: Clone + Default + 'static {
     /// Most headers have this set to true.
     const MAX_ONE: bool;
 
-
     fn body<H>(body: H) -> Result<Header<Self>, ComponentCreationError>
         where H: HeaderTryInto<Self::Component>
     {

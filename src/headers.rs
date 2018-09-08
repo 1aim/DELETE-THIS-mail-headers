@@ -193,65 +193,65 @@ mod test {
 
     test!(from_validation_normal {
         let mut map = HeaderMap::new();
-        map.set(_From   ::body( [("Mr. Peté", "pete@nixmail.example")] )?);
-        map.set(Subject ::body( "Ok"                                   )?);
+        map.insert(_From   ::body( [("Mr. Peté", "pete@nixmail.example")] )?);
+        map.insert(Subject ::body( "Ok"                                   )?);
 
         assert_ok!(map.use_contextual_validators());
     });
 
     test!(from_validation_multi_err {
         let mut map = HeaderMap::new();
-        map.set(_From::body((
+        map.insert(_From::body((
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
         ))?);
-        map.set(Subject::body("Ok")?);
+        map.insert(Subject::body("Ok")?);
 
         assert_err!(map.use_contextual_validators());
     });
 
     test!(from_validation_multi_ok {
         let mut map = HeaderMap::new();
-        map.set(_From::body((
+        map.insert(_From::body((
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
         ))?);
-        map.set(Sender  ::body(  "abx@d.e" )?);
-        map.set(Subject ::body(  "Ok"      )?);
+        map.insert(Sender  ::body(  "abx@d.e" )?);
+        map.insert(Subject ::body(  "Ok"      )?);
 
         assert_ok!(map.use_contextual_validators());
     });
 
     test!(resent_no_date_err {
         let mut map = HeaderMap::new();
-        map.set(ResentFrom ::body( ["a@b.c"] )?);
+        map.insert(ResentFrom ::body( ["a@b.c"] )?);
         assert_err!(map.use_contextual_validators());
     });
 
     test!(resent_with_date {
         let mut map = HeaderMap::new();
-        map.add(ResentFrom ::body( ["a@b.c"]       )?);
-        map.add(ResentDate ::body( DateTime::now() )?);
+        map.insert(ResentFrom ::body( ["a@b.c"]       )?);
+        map.insert(ResentDate ::body( DateTime::now() )?);
         assert_ok!(map.use_contextual_validators());
     });
 
     test!(resent_no_date_err_second_block {
         let mut map = HeaderMap::new();
-        map.add(ResentDate ::body( DateTime::now() )?);
-        map.add(ResentFrom ::body( ["a@b.c"]       )?);
-        map.add(ResentTo   ::body( ["e@f.d"]       )?);
-        map.add(ResentFrom ::body( ["ee@ee.e"]     )?);
+        map.insert(ResentDate ::body( DateTime::now() )?);
+        map.insert(ResentFrom ::body( ["a@b.c"]       )?);
+        map.insert(ResentTo   ::body( ["e@f.d"]       )?);
+        map.insert(ResentFrom ::body( ["ee@ee.e"]     )?);
 
         assert_err!(map.use_contextual_validators());
     });
 
     test!(resent_with_date_second_block {
         let mut map = HeaderMap::new();
-        map.add(ResentDate ::body( DateTime::now() )?);
-        map.add(ResentFrom ::body( ["a@b.c"]       )?);
-        map.add(ResentTo   ::body( ["e@f.d"]       )?);
-        map.add(ResentFrom ::body( ["ee@ee.e"]     )?);
-        map.add(ResentDate ::body( DateTime::now() )?);
+        map.insert(ResentDate ::body( DateTime::now() )?);
+        map.insert(ResentFrom ::body( ["a@b.c"]       )?);
+        map.insert(ResentTo   ::body( ["e@f.d"]       )?);
+        map.insert(ResentFrom ::body( ["ee@ee.e"]     )?);
+        map.insert(ResentDate ::body( DateTime::now() )?);
 
         assert_ok!(map.use_contextual_validators());
     });
@@ -259,17 +259,17 @@ mod test {
     test!(resent_multi_mailbox_from_no_sender {
 
         let mut map = HeaderMap::new();
-        map.add(ResentDate ::body( DateTime::now()   )?);
-        map.add(ResentFrom ::body( ["a@b.c","e@c.d"] )?);
+        map.insert(ResentDate ::body( DateTime::now()   )?);
+        map.insert(ResentFrom ::body( ["a@b.c","e@c.d"] )?);
 
         assert_err!(map.use_contextual_validators());
     });
 
     test!(resent_multi_mailbox_from_with_sender {
         let mut map = HeaderMap::new();
-        map.add(ResentDate   ::body( DateTime::now()   )?);
-        map.add(ResentFrom   ::body( ["a@b.c","e@c.d"] )?);
-        map.add(ResentSender ::body( "a@b.c"           )?);
+        map.insert(ResentDate   ::body( DateTime::now()   )?);
+        map.insert(ResentFrom   ::body( ["a@b.c","e@c.d"] )?);
+        map.insert(ResentSender ::body( "a@b.c"           )?);
         assert_ok!(map.use_contextual_validators());
     });
 

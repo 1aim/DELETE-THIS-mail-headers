@@ -69,7 +69,7 @@ macro_rules! test {
     ($name:ident $code:block) => (
         #[test]
         fn $name() {
-            fn inner() -> Result<(), $crate::error::ComponentCreationError> {
+            fn inner() -> Result<(), ::failure::Error> {
                 $code;
                 Ok(())
             }

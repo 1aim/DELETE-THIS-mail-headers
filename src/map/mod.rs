@@ -90,6 +90,51 @@ pub type HeaderMapValidator = fn(&HeaderMap) -> Result<(), ::error::HeaderValida
 /// let _ = map._get::<Subject>();
 /// ```
 ///
+/// # MaxOne (In-)Consistency
+///
+/// Most headers can only appear up to one time in a header section.
+/// They are marked with `H::MAX_ONE == true` and implement `MaxOneMarker`,
+/// also as object you can use `is_max_one` to check it.
+///
+/// Not only can they only appear max one time, it is normal for a user
+/// who is not aware about the other headers to expect that when you insert
+/// them into a header map which already contains them that they replace
+/// the existing header. Even more so most headers which can appear more
+/// then one time are unlikely to appear in a application of this library
+/// like e.g. all `Resent-*` header which normally get just prepended
+/// to existing mail in text format or the `Comment` header which isn't
+/// used that much.
+///
+/// Because of this it was decided that when inserting a `"max one"` header
+/// it will act as expected an replace other headers with the same name and
+/// only if a `"multi"` header is inserted it is added to all headers associated
+/// with the same name.
+///
+/// But there is a single problem. If there are multiple implementations implementations
+/// for the same header which disagree in wether or not the header is `"max one"` (which
+/// would be a bug anyway!) then this can lead to a tricky situration when you first
+/// insert the version which is `"max one"` and then the one which is `"multi"`.
+/// There had been two ways to deal with this:
+///
+/// 1. return a error when inserting in such a situation
+/// 2. simple allow it and check it when running the other
+///    validators
+///
+/// Given that a header map contains additionally validators which needs
+/// to be run explicitly to make sure that a map is valid before using it
+/// as a header section in a mail it was decided to go with the later approach.
+/// Originally the first approach was implemented but turned out to be not
+/// very ergonomic, and the second approach has little disadvantages as:
+///
+/// - it's already unlikely to run into the situation
+/// - you have to run validators anyway before using the
+///   header map
+///
+///
+/// **So yes, you can not relay on the "max one" constraints
+///   to be uphold without running the validators**
+///
+///
 #[derive(Clone)]
 pub struct HeaderMap {
     inner_map: TotalOrderMultiMap<HeaderName, Box<HeaderObj>>,
@@ -183,15 +228,17 @@ impl HeaderMap {
     /// if this gets in the way `_get_single` can be used which would
     /// lead to code like `map._get_single::<Subject>()`.
     ///
-    /// # Panic (debug)
+    /// # Error
     ///
-    /// If debug assertions are enabled and this method is called with
-    /// a `HeaderKind` impl. which wrongly implements `MaxOneMarker` (
-    /// it implements it and has `MAX_ONE == false`) this will panic.
+    /// - If there are multiple implementations for the same header and
+    ///   the inserted headers is based on a different type some `HeaderTypeError`
+    ///   is returned
     ///
-    /// As this error can only happen when wrongly implementing a trait
-    /// normally not implemented by hand this check is only done if
-    /// debug assertions are enabled.
+    /// - If there are multiple implementations for the same header which
+    ///   disagree on the value of `H::MAX_ONE` (which is a bug) this can
+    ///   in some rare situations lead to be there more then one header for
+    ///   a "max one" header in the map, in which case a `HeaderTypeError`
+    ///   is returned.
     #[inline(always)]
     pub fn get_single<'a, H>(&'a self, _type_hint: H)
         -> Option<Result<&'a Header<H>, HeaderTypeError>>
@@ -209,6 +256,10 @@ impl HeaderMap {
         where H: MaxOneMarker
     {
         let mut bodies = self.get_untyped(H::name());
+        if bodies.len() > 1 {
+            return Some(Err(HeaderTypeError::new(H::name())))
+        }
+
         bodies.next().map(|untyped| {
             untyped.downcast_ref::<H>()
                 .ok_or_else(|| HeaderTypeError::new(H::name()))
@@ -263,71 +314,88 @@ impl HeaderMap {
         self.get_untyped_mut(H::name()).into()
     }
 
-    /// Inserts given header into the header map.
+    /// Inserts the given header into the map either replacing or adding to existing headers.
     ///
-    /// Returns the header components currently associated with
-    /// the given header.
+    /// - If `H::MAX_ONE` is `true` then it will use "replacing insert" which means
+    ///   all headers previously associated with the given  header (name) are removed when
+    ///   adding the new header.
     ///
-    /// # Error
+    ///   This behavior is analog to how a normal map works and
+    ///   is what a user which isn't aware that there are some headers which can appear multiple
+    ///   times would expect. Most common headers (`Subject`, `From`, `To`, `Sender`, etc.) fall
+    ///   into this category.
     ///
-    /// returns a error if `body` can not be converted into the
-    /// right component type (which is specified through the headers
-    /// associated `Component` type).
+    /// - If `H::MAX_ONE` is `false` then it will use "adding insert" which means
+    ///   that it will add the header to all headers previously associated with the given
+    ///   header name.
     ///
-    /// # Note (_add)
-    ///
-    /// This method does two thinks for better usability/ergonomic:
-    ///
-    /// 1. internally convert body to H::Component (which can fail)
-    /// 2. accept a (normally zero-sized) type hint as first parameter
-    ///
-    /// This allows writing e.g. `.insert(Sender, address)`
-    /// instead of `._insert::<Sender>(<Sender as HeaderKind>::Component::try_from(address))`.
-    /// But for some use cases this is suboptimal, e.g. if you already have the right
-    /// type and therefore insertion should not be able to fail or if you have `H` as
-    /// type parameter but not as type hint. For this cases `_insert` exist, which doesn't
-    /// do any conversion and accepts `H` only as generic type parameter.
-    ///
-    pub fn add<H>(&mut self, header: Header<H>) -> UntypedBodiesMut
+    pub fn insert<H>(&mut self, header: Header<H>)
         where H: HeaderKind
     {
         let name = header.name();
         let obj: Box<HeaderObj> = Box::new(header);
-        let access = self.inner_map.add(name, obj);
-        access
+        self._insert(name, H::MAX_ONE, obj)
     }
 
-    /// Sets the body to be the only on associated with the given header.
-    ///
-    /// Other header components previously associated with the given header
-    /// are removed from this map and returned.
-    ///
-    /// # Note: `_set`
-    ///
-    /// This is just a wrapper around `_set` adding some convenience
-    /// functionality like accepting a type hint and converting the
-    /// body to the right type. For passing in the header as type
-    /// only and for not having any (theoretically) fallible body
-    /// conversion use `_set` instead.
-    pub fn set<H>(&mut self, header: Header<H>) -> Vec<Box<HeaderObj>>
-        where H: HeaderKind,
-    {
-        let name = header.name();
-        let obj: Box<HeaderObj> = Box::new(header);
-        let bodies = self.inner_map.set(name, obj);
-        bodies
+    /// Insert a HeaderObj into the header map.
+    #[doc(hidden)]
+    pub fn insert_untyped(&mut self, obj: Box<HeaderObj>) {
+        self._insert(obj.name(), obj.is_max_one(), obj)
     }
 
-    //TODO impl extend?
-    /// combines this header map with another header map
+    #[inline(always)]
+    fn _insert(&mut self, name: HeaderName, max_one: bool, obj: Box<HeaderObj>) {
+        if max_one {
+            self.inner_map.set(name, obj);
+        } else {
+            self.inner_map.add(name, obj);
+        }
+    }
+
+    /// Insert all given headers in order into this header map.
     ///
-    /// All headers in other get inserted into this map
-    /// in the order they where inserted into other.
-    /// Additionally all validators in other get inserted
-    /// into this map.
-    pub fn combine(&mut self, other: HeaderMap)  -> &mut Self {
-        self.inner_map.extend(other.inner_map);
-        self
+    /// The insertion order of the given headers into this map
+    /// is the same as the order in which they had been inserted
+    /// into the header map through which they had been given to
+    /// this method.
+    ///
+    /// As this uses insertion it also means that headers with
+    /// `MAX_ONE == true` in the headers to insert can replace
+    /// existing headers associated with the same header name.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # #[macro_use]
+    /// # extern crate mail_headers;
+    /// # fn main() {
+    /// use mail_headers::headers::*;
+    ///
+    /// let mut map = headers!{
+    ///     _From: [("Not Met", "it.s.me@example.com")],
+    ///     Subject: "..."
+    /// }.unwrap();
+    ///
+    /// map.insert_all(headers! {
+    ///     _To: [("You", "someone@example.com")],
+    ///     Subject: "expected subject"
+    /// }.unwrap());
+    ///
+    /// assert_eq!(map.len(), 3);
+    /// let subject = map.get_single(Subject)
+    ///     .expect("Subject to be in map (Some)")
+    ///     .expect("The type to be correct (Ok)");
+    ///
+    /// assert_eq!(subject.as_str(), "expected subject");
+    /// assert!(map.contains(_From));
+    /// assert!(map.contains(_To));
+    /// # }
+    /// ```
+    ///
+    pub fn insert_all(&mut self, other: HeaderMap) {
+        for (_name, header) in other.into_iter() {
+            self.insert_untyped(header);
+        }
     }
 
     /// remove all headers with the given header name
@@ -511,7 +579,7 @@ macro_rules! headers {
         {
             let mut map = $crate::HeaderMap::new();
             $(
-                map.add(<$header as $crate::HeaderKind>::body($val)?);
+                map.insert(<$header as $crate::HeaderKind>::body($val)?);
             )*
             Ok(map)
         })()
@@ -765,7 +833,7 @@ mod test {
             XComment: "ab@c"
         }?;
 
-        headers.combine(headers! {
+        headers.insert_all(headers! {
             Subject: "hy there",
             Comments: "magic+spell"
         }?);
