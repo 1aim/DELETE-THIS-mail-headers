@@ -16,17 +16,20 @@ use total_order_multi_map::{
     EntryValuesMut
 };
 
-use common::encoder::EncodableInHeader;
-use ::HeaderTryInto;
 use ::error::{
-    ComponentCreationError, HeaderTypeError,
-    HeaderValidationError, BuildInValidationError
+    HeaderTypeError,
+    HeaderValidationError,
+    BuildInValidationError
 };
 
-use super::{
-    HeaderName,
-    Header,
-    HasHeaderName
+use ::name::{
+    HeaderName, HasHeaderName
+};
+
+use ::header::{
+    Header, HeaderKind,
+    HeaderObj, HeaderObjTrait,
+    MaxOneMarker
 };
 
 mod into_iter;
@@ -75,7 +78,7 @@ pub type HeaderMapValidator = fn(&HeaderMap) -> Result<(), ::error::HeaderValida
 ///
 /// A number of methods implemented on HeaderMap appear in two variations,
 /// one which accepts a type hint (a normally zero sized struct implementing
-/// Header) and on which just accepts the type and needs to be called with
+/// HeaderKind) and on which just accepts the type and needs to be called with
 /// the turbofish operator. The later one is prefixed by a `_` as the former
 /// one is more nice to use, but in some situations, e.g. when wrapping
 /// `HeaderMap` in custom code the only type accepting variations are more
@@ -87,14 +90,60 @@ pub type HeaderMapValidator = fn(&HeaderMap) -> Result<(), ::error::HeaderValida
 /// let _ = map._get::<Subject>();
 /// ```
 ///
+/// # MaxOne (In-)Consistency
+///
+/// Most headers can only appear up to one time in a header section.
+/// They are marked with `H::MAX_ONE == true` and implement `MaxOneMarker`,
+/// also as object you can use `is_max_one` to check it.
+///
+/// Not only can they only appear max one time, it is normal for a user
+/// who is not aware about the other headers to expect that when you insert
+/// them into a header map which already contains them that they replace
+/// the existing header. Even more so most headers which can appear more
+/// then one time are unlikely to appear in a application of this library
+/// like e.g. all `Resent-*` header which normally get just prepended
+/// to existing mail in text format or the `Comment` header which isn't
+/// used that much.
+///
+/// Because of this it was decided that when inserting a `"max one"` header
+/// it will act as expected an replace other headers with the same name and
+/// only if a `"multi"` header is inserted it is added to all headers associated
+/// with the same name.
+///
+/// But there is a single problem. If there are multiple implementations implementations
+/// for the same header which disagree in wether or not the header is `"max one"` (which
+/// would be a bug anyway!) then this can lead to a tricky situration when you first
+/// insert the version which is `"max one"` and then the one which is `"multi"`.
+/// There had been two ways to deal with this:
+///
+/// 1. return a error when inserting in such a situation
+/// 2. simple allow it and check it when running the other
+///    validators
+///
+/// Given that a header map contains additionally validators which needs
+/// to be run explicitly to make sure that a map is valid before using it
+/// as a header section in a mail it was decided to go with the later approach.
+/// Originally the first approach was implemented but turned out to be not
+/// very ergonomic, and the second approach has little disadvantages as:
+///
+/// - it's already unlikely to run into the situation
+/// - you have to run validators anyway before using the
+///   header map
+///
+///
+/// **So yes, you can not relay on the "max one" constraints
+///   to be uphold without running the validators**
+///
+///
 #[derive(Clone)]
 pub struct HeaderMap {
-    validators: HashSet<ValidatorHashWrapper>,
-    inner_map: TotalOrderMultiMap<HeaderName, Box<EncodableInHeader>>,
+    inner_map: TotalOrderMultiMap<HeaderName, Box<HeaderObj>>,
 }
 
-pub type Iter<'a> = total_order_multi_map::Iter<'a, HeaderName, Box<EncodableInHeader>>;
-pub type IterMut<'a> = total_order_multi_map::IterMut<'a, HeaderName, Box<EncodableInHeader>>;
+pub type Iter<'a> = total_order_multi_map::Iter<'a, HeaderName, Box<HeaderObj>>;
+pub type IterMut<'a> = total_order_multi_map::IterMut<'a, HeaderName, Box<HeaderObj>>;
+pub type Values<'a> = total_order_multi_map::Values<'a, HeaderName, Box<HeaderObj>>;
+pub type ValuesMut<'a> = total_order_multi_map::ValuesMut<'a, HeaderName, Box<HeaderObj>>;
 
 impl Debug for HeaderMap {
     fn fmt(&self, fter: &mut fmt::Formatter) -> fmt::Result {
@@ -109,7 +158,6 @@ impl Debug for HeaderMap {
 impl Default for HeaderMap {
     fn default() -> Self {
         HeaderMap {
-            validators: Default::default(),
             inner_map: Default::default()
         }
     }
@@ -131,8 +179,17 @@ impl HeaderMap {
     ///
     /// This removes all headers _and_ all validators
     pub fn clear(&mut self) {
-        self.validators.clear();
         self.inner_map.clear();
+    }
+
+    /// Iterate over all `HeaderObj` added to the map.
+    pub fn values(&self) -> Values {
+        self.inner_map.values()
+    }
+
+    /// Iterate with mut refs over all `HeaderObj` added to the map.
+    pub fn values_mut(&mut self) -> ValuesMut {
+        self.inner_map.values_mut()
     }
 
     /// call each unique contextual validator exactly once with this map as parameter
@@ -140,43 +197,78 @@ impl HeaderMap {
     /// If multiple Headers provide the same contextual validator (e.g. the resent headers)
     /// it's still only called once.
     pub fn use_contextual_validators(&self) -> Result<(), HeaderValidationError> {
-        for validator in self.validators.iter() {
-            (validator.as_func())(self)?;
+        let mut seen_validators = HashSet::new();
+        let validators = self.values()
+            .filter_map(|hobj| hobj.validator());
+
+        for validator in validators {
+            if seen_validators.insert(ValidatorHashWrapper(validator)) {
+                (validator)(self)?;
+            }
         }
         Ok(())
     }
 
-    /// returns true if the headermap contains a header with the same name
+    /// Returns true if this map contains a header with the given name.
     pub fn contains<H: HasHeaderName>(&self, name: H) -> bool {
         self.inner_map.contains_key(name.get_name())
     }
 
-    /// returns the first header field ignoring any additional fields with the same name
+    /// Returns the single header associated with the given header kind.
+    ///
+    /// As this uses the `MaxOneMarker` trait which _should_ only be implemented
+    /// for `HeaderKind` impl with `MAX_ONE == true` this function can only
+    /// be used when it's fine to ignore the possible case of more than
+    /// one header of the given kind being in the same map.
+    ///
+    /// # Type Hint
+    ///
+    /// The type hint passed in is for ergonomics, e.g. so
+    /// that it's possible to write code like `map.get_single(Subject)`
+    /// if this gets in the way `_get_single` can be used which would
+    /// lead to code like `map._get_single::<Subject>()`.
+    ///
+    /// # Error
+    ///
+    /// - If there are multiple implementations for the same header and
+    ///   the inserted headers is based on a different type some `HeaderTypeError`
+    ///   is returned
+    ///
+    /// - If there are multiple implementations for the same header which
+    ///   disagree on the value of `H::MAX_ONE` (which is a bug) this can
+    ///   in some rare situations lead to be there more then one header for
+    ///   a "max one" header in the map, in which case a `HeaderTypeError`
+    ///   is returned.
     #[inline(always)]
-    pub fn get_single<'a ,H>(&'a self, _type_hint: H)
-        -> Option<Result<&'a H::Component, HeaderTypeError>>
-        where H: Header,
-              H::Component: EncodableInHeader
+    pub fn get_single<'a, H>(&'a self, _type_hint: H)
+        -> Option<Result<&'a Header<H>, HeaderTypeError>>
+        where H: MaxOneMarker
     {
         self._get_single::<H>()
     }
 
-    /// Returns a header component associated with the given header type.
-    pub fn _get_single<'a ,H>(&'a self)
-        -> Option<Result<&'a H::Component, HeaderTypeError>>
-        where H: Header,
-              H::Component: EncodableInHeader
+    /// A variation of `get_single` which doesn't require passing in a type hint.
+    ///
+    /// Normally using `get_single` is more ergonomic, except if you write a function
+    /// which abstracts over it in which case using `_get_single` can be better.
+    pub fn _get_single<'a, H>(&'a self)
+        -> Option<Result<&'a Header<H>, HeaderTypeError>>
+        where H: MaxOneMarker
     {
         let mut bodies = self.get_untyped(H::name());
+        if bodies.len() > 1 {
+            return Some(Err(HeaderTypeError::new(H::name())))
+        }
+
         bodies.next().map(|untyped| {
-            untyped.downcast_ref::<H::Component>()
+            untyped.downcast_ref::<H>()
                 .ok_or_else(|| HeaderTypeError::new(H::name()))
         })
     }
 
     /// Returns all header bodies for a given header name, without trying to cast them to a concrete type
     ///
-    /// Accepts both `HeaderName` or a type implementing `Header`.
+    /// Accepts both `HeaderName` or a type implementing `HeaderKind`.
     ///
     #[inline]
     pub fn get_untyped<H: HasHeaderName>(&self, name: H) -> UntypedBodies {
@@ -185,7 +277,7 @@ impl HeaderMap {
 
     /// Returns all header bodies for a given header name, without trying to cast them to a concrete type
     ///
-    /// Accepts both `HeaderName` or a type implementing `Header`.
+    /// Accepts both `HeaderName` or a type implementing `HeaderKind`.
     ///
     #[inline]
     pub fn get_untyped_mut<H: HasHeaderName>(&mut self, name: H) -> UntypedBodiesMut {
@@ -195,14 +287,14 @@ impl HeaderMap {
     /// Returns all header bodies for a given header
     #[inline(always)]
     pub fn get<H>(&self, _type_hint: H) -> TypedBodies<H>
-        where H: Header, H::Component: EncodableInHeader
+        where H: HeaderKind
     {
         self._get::<H>()
     }
 
     /// Returns all header bodies for a given header
     pub fn _get<H>(&self) -> TypedBodies<H>
-        where H: Header, H::Component: EncodableInHeader
+        where H: HeaderKind
     {
         self.get_untyped(H::name()).into()
     }
@@ -210,119 +302,100 @@ impl HeaderMap {
     /// Returns all header bodies for a given header
     #[inline(always)]
     pub fn get_mut<H>(&mut self, _type_hint: H) -> TypedBodiesMut<H>
-        where H: Header, H::Component: EncodableInHeader
+        where H: HeaderKind
     {
         self._get_mut::<H>()
     }
 
     /// Returns all header bodies for a given header
     pub fn _get_mut<H>(&mut self) -> TypedBodiesMut<H>
-        where H: Header, H::Component: EncodableInHeader
+        where H: HeaderKind
     {
         self.get_untyped_mut(H::name()).into()
     }
 
-    /// Inserts given header into the header map.
+    /// Inserts the given header into the map either replacing or adding to existing headers.
     ///
-    /// Returns the header components currently associated with
-    /// the given header.
+    /// - If `H::MAX_ONE` is `true` then it will use "replacing insert" which means
+    ///   all headers previously associated with the given  header (name) are removed when
+    ///   adding the new header.
     ///
-    /// # Error
+    ///   This behavior is analog to how a normal map works and
+    ///   is what a user which isn't aware that there are some headers which can appear multiple
+    ///   times would expect. Most common headers (`Subject`, `From`, `To`, `Sender`, etc.) fall
+    ///   into this category.
     ///
-    /// returns a error if `body` can not be converted into the
-    /// right component type (which is specified through the headers
-    /// associated `Component` type).
+    /// - If `H::MAX_ONE` is `false` then it will use "adding insert" which means
+    ///   that it will add the header to all headers previously associated with the given
+    ///   header name.
     ///
-    /// # Note (_add)
-    ///
-    /// This method does two thinks for better usability/ergonomic:
-    ///
-    /// 1. internally convert body to H::Component (which can fail)
-    /// 2. accept a (normally zero-sized) type hint as first parameter
-    ///
-    /// This allows writing e.g. `.insert(Sender, address)`
-    /// instead of `._insert::<Sender>(<Sender as Header>::Component::try_from(address))`.
-    /// But for some use cases this is suboptimal, e.g. if you already have the right
-    /// type and therefore insertion should not be able to fail or if you have `H` as
-    /// type parameter but not as type hint. For this cases `_insert` exist, which doesn't
-    /// do any conversion and accepts `H` only as generic type parameter.
-    ///
-    pub fn add<H, C>(&mut self, _htype_hint: H, body: C) -> Result<UntypedBodiesMut, ComponentCreationError>
-        where H: Header,
-              H::Component: EncodableInHeader,
-              C: HeaderTryInto<H::Component>
+    pub fn insert<H>(&mut self, header: Header<H>)
+        where H: HeaderKind
     {
-        Ok(self._add::<H>(body.try_into()?))
+        let name = header.name();
+        let obj: Box<HeaderObj> = Box::new(header);
+        self._insert(name, H::MAX_ONE, obj)
     }
 
+    /// Insert a HeaderObj into the header map.
+    #[doc(hidden)]
+    pub fn insert_untyped(&mut self, obj: Box<HeaderObj>) {
+        self._insert(obj.name(), obj.is_max_one(), obj)
+    }
 
-    /// Add given header into the header map.
-    ///
-    /// This _adds_ an header e.g. if a header with given name
-    /// already was in the map it is now in there twice.
-    ///
-    /// Returns the header components currently associated with
-    /// the given header.
-    pub fn _add<H>(&mut self, component: H::Component) -> UntypedBodiesMut
-        where H: Header,
-              H::Component: EncodableInHeader
-    {
-        let obj: Box<EncodableInHeader> = Box::new(component);
-        let name = H::name();
-        let access = self.inner_map.add(name, obj);
-        if let Some(validator) = H::VALIDATOR {
-            self.validators.insert(ValidatorHashWrapper(validator));
+    #[inline(always)]
+    fn _insert(&mut self, name: HeaderName, max_one: bool, obj: Box<HeaderObj>) {
+        if max_one {
+            self.inner_map.set(name, obj);
+        } else {
+            self.inner_map.add(name, obj);
         }
-        access
     }
 
-    /// Sets the body to be the only on associated with the given header.
+    /// Insert all given headers in order into this header map.
     ///
-    /// Other header components previously associated with the given header
-    /// are removed from this map and returned.
+    /// The insertion order of the given headers into this map
+    /// is the same as the order in which they had been inserted
+    /// into the header map through which they had been given to
+    /// this method.
     ///
-    /// # Note: `_set`
+    /// As this uses insertion it also means that headers with
+    /// `MAX_ONE == true` in the headers to insert can replace
+    /// existing headers associated with the same header name.
     ///
-    /// This is just a wrapper around `_set` adding some convenience
-    /// functionality like accepting a type hint and converting the
-    /// body to the right type. For passing in the header as type
-    /// only and for not having any (theoretically) fallible body
-    /// conversion use `_set` instead.
-    pub fn set<H, C>(&mut self, _htype_hint: H, body: C)
-        -> Result<Vec<Box<EncodableInHeader>>, ComponentCreationError>
-        where H: Header,
-              H::Component: EncodableInHeader,
-              C: HeaderTryInto<H::Component>
-    {
-        Ok(self._set::<H>(body.try_into()?))
-    }
-
-    /// Inserts a given header in the the header map _removing_ all other headers with the same name.
+    /// # Example
     ///
-    /// Returns the headers previously set under given name.
-    pub fn _set<H>(&mut self, component: H::Component) -> Vec<Box<EncodableInHeader>>
-        where H: Header,
-              H::Component: EncodableInHeader
-    {
-        let obj: Box<EncodableInHeader> = Box::new(component);
-        let name = H::name();
-        let bodies = self.inner_map.set(name, obj);
-        if let Some(validator) = H::VALIDATOR {
-            self.validators.insert(ValidatorHashWrapper(validator));
+    /// ```
+    /// # #[macro_use]
+    /// # extern crate mail_headers;
+    /// # fn main() {
+    /// use mail_headers::headers::*;
+    ///
+    /// let mut map = headers!{
+    ///     _From: [("Not Met", "it.s.me@example.com")],
+    ///     Subject: "..."
+    /// }.unwrap();
+    ///
+    /// map.insert_all(headers! {
+    ///     _To: [("You", "someone@example.com")],
+    ///     Subject: "expected subject"
+    /// }.unwrap());
+    ///
+    /// assert_eq!(map.len(), 3);
+    /// let subject = map.get_single(Subject)
+    ///     .expect("Subject to be in map (Some)")
+    ///     .expect("The type to be correct (Ok)");
+    ///
+    /// assert_eq!(subject.as_str(), "expected subject");
+    /// assert!(map.contains(_From));
+    /// assert!(map.contains(_To));
+    /// # }
+    /// ```
+    ///
+    pub fn insert_all(&mut self, other: HeaderMap) {
+        for (_name, header) in other.into_iter() {
+            self.insert_untyped(header);
         }
-        bodies
-    }
-
-    /// combines this header map with another header map
-    ///
-    /// All headers in other get inserted into this map
-    /// in the order they where inserted into other.
-    /// Additionally all validators in other get inserted
-    /// into this map.
-    pub fn combine(&mut self, other: HeaderMap)  -> &mut Self {
-        self.validators.extend(other.validators);
-        self.inner_map.extend(other.inner_map);
-        self
     }
 
     /// remove all headers with the given header name
@@ -340,8 +413,8 @@ impl HeaderMap {
 }
 
 /// Iterator over all boxed bodies for a given header name
-pub type UntypedBodies<'a> = EntryValues<'a, EncodableInHeader>;
-pub type UntypedBodiesMut<'a> = EntryValuesMut<'a, EncodableInHeader>;
+pub type UntypedBodies<'a> = EntryValues<'a, HeaderObj>;
+pub type UntypedBodiesMut<'a> = EntryValuesMut<'a, HeaderObj>;
 
 
 /// Iterator over all boxed bodies for a given header name with knows which type they should have
@@ -349,16 +422,14 @@ pub type UntypedBodiesMut<'a> = EntryValuesMut<'a, EncodableInHeader>;
 /// This iterator will automatically try to cast each header body of this
 /// header to `H::Component`, i.e. the type this body _should_ have.
 pub struct TypedBodies<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     inner: UntypedBodies<'a>,
     _marker: PhantomData<H>
 }
 
 impl<'a, H> From<UntypedBodies<'a>> for TypedBodies<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     fn from(untyped: UntypedBodies<'a>) -> Self {
         Self::new(untyped)
@@ -366,8 +437,7 @@ impl<'a, H> From<UntypedBodies<'a>> for TypedBodies<'a, H>
 }
 
 impl<'a, H> TypedBodies<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind,
 {
     fn new(inner: UntypedBodies<'a>) -> Self {
         TypedBodies {
@@ -378,15 +448,14 @@ impl<'a, H> TypedBodies<'a, H>
 }
 
 impl<'a, H> Iterator for TypedBodies<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
-    type Item = Result<&'a H::Component, HeaderTypeError>;
+    type Item = Result<&'a Header<H>, HeaderTypeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
             .map( |tobj| {
-                tobj.downcast_ref::<H::Component>()
+                tobj.downcast_ref::<H>()
                     .ok_or_else(|| HeaderTypeError::new(H::name()))
             } )
     }
@@ -397,8 +466,7 @@ impl<'a, H> Iterator for TypedBodies<'a, H>
 }
 
 impl<'a, H> ExactSizeIterator for TypedBodies<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     fn len(&self) -> usize {
         self.inner.len()
@@ -406,8 +474,7 @@ impl<'a, H> ExactSizeIterator for TypedBodies<'a, H>
 }
 
 impl<'a, H> Clone for TypedBodies<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     fn clone(&self) -> Self {
         TypedBodies::new(self.inner.clone())
@@ -415,8 +482,7 @@ impl<'a, H> Clone for TypedBodies<'a, H>
 }
 
 impl<'a, H> Debug for TypedBodies<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     fn fmt(&self, fter: &mut fmt::Formatter) -> fmt::Result {
         fter.debug_struct("TypedBodies")
@@ -430,16 +496,14 @@ impl<'a, H> Debug for TypedBodies<'a, H>
 /// This iterator will automatically try to cast each header body of this
 /// header to `H::Component`, i.e. the type this body _should_ have.
 pub struct TypedBodiesMut<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     inner: UntypedBodiesMut<'a>,
     _marker: PhantomData<H>
 }
 
 impl<'a, H> From<UntypedBodiesMut<'a>> for TypedBodiesMut<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     fn from(untyped: UntypedBodiesMut<'a>) -> Self {
         Self::new(untyped)
@@ -447,8 +511,7 @@ impl<'a, H> From<UntypedBodiesMut<'a>> for TypedBodiesMut<'a, H>
 }
 
 impl<'a, H> TypedBodiesMut<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     fn new(inner: UntypedBodiesMut<'a>) -> Self {
         TypedBodiesMut {
@@ -459,15 +522,14 @@ impl<'a, H> TypedBodiesMut<'a, H>
 }
 
 impl<'a, H> Iterator for TypedBodiesMut<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
-    type Item = Result<&'a mut H::Component, HeaderTypeError>;
+    type Item = Result<&'a mut Header<H>, HeaderTypeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
             .map(|tobj| {
-                tobj.downcast_mut::<H::Component>()
+                tobj.downcast_mut::<H>()
                     .ok_or_else(|| HeaderTypeError::new(H::name()))
             })
     }
@@ -478,8 +540,7 @@ impl<'a, H> Iterator for TypedBodiesMut<'a, H>
 }
 
 impl<'a, H> ExactSizeIterator for TypedBodiesMut<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     fn len(&self) -> usize {
         self.inner.len()
@@ -487,8 +548,7 @@ impl<'a, H> ExactSizeIterator for TypedBodiesMut<'a, H>
 }
 
 impl<'a, H> Debug for TypedBodiesMut<'a, H>
-    where H: Header,
-          H::Component: EncodableInHeader
+    where H: HeaderKind
 {
     fn fmt(&self, fter: &mut fmt::Formatter) -> fmt::Result {
         fter.write_str("TypedBodiesMut { .. }")
@@ -519,8 +579,7 @@ macro_rules! headers {
         {
             let mut map = $crate::HeaderMap::new();
             $(
-                let component: <$header as $crate::Header>::Component = $crate::HeaderTryFrom::try_from($val)?;
-                map._add::<$header>(component);
+                map.insert(<$header as $crate::HeaderKind>::body($val)?);
             )*
             Ok(map)
         })()
@@ -537,10 +596,6 @@ macro_rules! headers {
 struct ValidatorHashWrapper(HeaderMapValidator);
 
 impl ValidatorHashWrapper {
-
-    fn as_func(&self) -> HeaderMapValidator {
-        self.0
-    }
 
     fn identity_repr(&self) -> usize {
         self.0 as usize
@@ -628,8 +683,8 @@ mod test {
         def_headers! {
             test_name: validate_header_names,
             scope: header_components,
-            Subject, unchecked { "Subject" }, RawUnstructured, maxOne,
-            Comments, unchecked { "Comments" }, RawUnstructured, None
+            Subject, unchecked { "Subject" }, RawUnstructured, maxOne, None,
+            Comments, unchecked { "Comments" }, RawUnstructured, multi, None
         }
     }
 
@@ -637,8 +692,8 @@ mod test {
         def_headers! {
             test_name: validate_header_names,
             scope: super,
-            Subject, unchecked { "Subject" },  OtherComponent, maxOne,
-            Comments, unchecked { "Comments" }, OtherComponent, None
+            Subject, unchecked { "Subject" },  OtherComponent, maxOne, None,
+            Comments, unchecked { "Comments" }, OtherComponent, multi, None
         }
     }
 
@@ -657,8 +712,8 @@ mod test {
             // all headers _could_ have multiple values, through neither
             // ContentType nor Subject do have multiple value
             .get(Comments)
-            .map(|h: Result<&RawUnstructured, HeaderTypeError>| {
-                let v = h.expect( "the trait object to be downcastable to RawUnstructured" );
+            .map(|h: Result<&Header<Comments>, HeaderTypeError>| {
+                let v = h.expect( "the trait object to be downcastable to Header<Comments>" );
                 assert_eq!(v.as_str(), TEXT_1);
             })
             .count();
@@ -666,8 +721,8 @@ mod test {
 
         let count = headers
             .get(Subject)
-            .map(|h: Result<&RawUnstructured, HeaderTypeError>| {
-                let val = h.expect( "the trait object to be downcastable to H::Component" );
+            .map(|h: Result<&Header<Subject>, HeaderTypeError>| {
+                let val = h.expect( "the trait object to be downcastable to Header<Subject>" );
                 assert_eq!(val.as_str(), TEXT_2);
             })
             .count();
@@ -733,7 +788,7 @@ mod test {
 
 
         let res = headers.get_untyped(Subject::name())
-            .map(|entry| entry.downcast_ref::<RawUnstructured>().unwrap().as_str() )
+            .map(|entry| entry.downcast_ref::<Subject>().unwrap().as_str() )
             .collect::<Vec<_>>();
 
         assert_eq!(
@@ -746,14 +801,14 @@ mod test {
         assert_eq!((2, Some(2)), res.size_hint());
 
         assert_eq!(
-            res.next().unwrap().downcast_ref::<RawUnstructured>().unwrap().as_str(),
+            res.next().unwrap().downcast_ref::<Comments>().unwrap().as_str(),
             "1st"
         );
 
         assert_eq!((1, Some(1)), res.size_hint());
 
         assert_eq!(
-            res.next().unwrap().downcast_ref::<OtherComponent>().unwrap(),
+            res.next().unwrap().downcast_ref::<BadComments>().unwrap().body(),
             &OtherComponent
         );
 
@@ -773,16 +828,15 @@ mod test {
         );
     }
 
-    #[test]
-    fn combine_keeps_order() {
+    test!(combine_keeps_order {
         let mut headers = headers! {
             XComment: "ab@c"
-        }.unwrap();
+        }?;
 
-        headers.combine( headers! {
+        headers.insert_all(headers! {
             Subject: "hy there",
             Comments: "magic+spell"
-        }.unwrap());
+        }?);
 
         assert_eq!(
             &[
@@ -795,17 +849,16 @@ mod test {
                 .collect::<Vec<_>>()
                 .as_slice()
         );
-    }
+    });
 
 
-    #[test]
-    fn remove_1() {
+    test!(remove_1 {
         let mut headers = headers!{
             Comments: "a",
             Subject: "b",
             Comments: "c",
             Comments: "d"
-        }.unwrap();
+        }?;
 
         assert_eq!( false, headers.remove_by_name( XComment::name() ) );
         assert_eq!( true, headers.remove_by_name( Subject::name() ) );
@@ -819,17 +872,16 @@ mod test {
         assert_eq!(
             &[ "a", "c", "d" ],
             values.as_slice()
-        )
-    }
+        );
+    });
 
-    #[test]
-    fn remove_2() {
+    test!(remove_2 {
         let mut headers = headers!{
             Comments: "a",
             Subject: "b",
             Comments: "c",
             Comments: "d"
-        }.unwrap();
+        }?;
 
         assert_eq!(true, headers.remove_by_name(Comments::name()));
         assert_eq!(false, headers.remove_by_name(Comments::name()));
@@ -844,10 +896,11 @@ mod test {
             &[ "b" ],
             values.as_slice()
         );
-    }
+    });
 
+    #[derive(Default, Copy, Clone)]
     struct XComment;
-    impl Header for XComment {
+    impl HeaderKind for XComment {
         type Component = RawUnstructured;
 
         fn name() -> HeaderName {
@@ -857,6 +910,8 @@ mod test {
         const VALIDATOR: Option<
             fn(&HeaderMap)-> Result<(), HeaderValidationError>
         > = Some(__validator);
+
+        const MAX_ONE: bool = false;
     }
 
     //some stupid but simple validator
@@ -870,47 +925,43 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn contains_works() {
+    test!(contains_works {
         let map = headers! {
             Subject: "soso"
-        }.unwrap();
+        }?;
 
-        assert_eq!( true, map.contains(Subject::name()) );
-        assert_eq!( true, map.contains(Subject) );
-        assert_eq!( false, map.contains(Comments::name()) );
-        assert_eq!( false, map.contains(Comments) );
-    }
+        assert_eq!( true,  map.contains( Subject::name()  ));
+        assert_eq!( true,  map.contains( Subject          ));
+        assert_eq!( false, map.contains( Comments::name() ));
+        assert_eq!( false, map.contains( Comments         ));
+    });
 
-    #[test]
-    fn use_validator_ok() {
+    test!(use_validator_ok {
         let map = headers! {
             XComment: "yay",
             Subject: "soso"
-        }.unwrap();
+        }?;
 
         assert_ok!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn use_validator_err() {
+    test!(use_validator_err {
         let map = headers! {
             XComment: "yay",
             Comments: "oh no",
             Subject: "soso"
-        }.unwrap();
+        }?;
 
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn has_len() {
+    test!(has_len {
         let map = headers! {
             XComment: "yay",
             Comments: "oh no",
             Subject: "soso"
-        }.unwrap();
+        }?;
 
         assert_eq!(3, map.len());
-    }
+    });
 }

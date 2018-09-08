@@ -1,5 +1,19 @@
-use ::name::HeaderName;
+use std::any::TypeId;
+use std::ops::Deref;
+use std::fmt::{self, Debug};
 
+use common::{
+    error::EncodingError,
+    encoder::{
+        EncodableInHeader,
+        EncodingWriter,
+    }
+};
+
+
+use ::error::ComponentCreationError;
+use ::convert::HeaderTryInto;
+use ::name::{HeaderName, HasHeaderName};
 //NOTE: this is a circular dependency between Header/HeaderMap
 // but putting up e.g. a GenericHeaderMap trait/interface is
 // not worth the work at all
@@ -10,10 +24,10 @@ use ::map::HeaderMapValidator;
 /// **This is not meant to be implemented by hand.***
 /// Use the `def_headers` macro instead.
 ///
-pub trait Header {
+pub trait HeaderKind: Clone + Default + 'static {
 
     /// the component representing the header-field, e.g. `Unstructured` for `Subject`
-    type Component;
+    type Component: EncodableInHeader + Clone;
 
     //FIXME[rust/const fn]: make this a associated constant
     /// a method returning the header name
@@ -37,25 +51,184 @@ pub trait Header {
     /// and it is invalid in the context
     /// an error should be returned.
     const VALIDATOR: Option<HeaderMapValidator>;
-}
 
+    /// I true this will assure that the header is at most one time in a header map.
+    ///
+    /// This is similar to `VALIDATOR` (and can be archived through one) but in difference
+    /// to any `VALIDATOR` this is already assured when inserting a header with MAX_ONE set
+    /// to true in a header map. It exists so that the header map can do, what is most
+    /// intuitive, replacing insertion for all `MAX_ONE` headers (like in a normal map) but
+    /// use adding insertion for all other header (like in a multi map).
+    ///
+    /// Most headers have this set to true.
+    const MAX_ONE: bool;
 
-/// a utility trait allowing us to use type hint structs
-/// in `HeaderMap::{contains, get_untyped}`
-pub trait HasHeaderName {
-    fn get_name(&self) -> HeaderName;
-}
+    fn body<H>(body: H) -> Result<Header<Self>, ComponentCreationError>
+        where H: HeaderTryInto<Self::Component>
+    {
+        Ok(Self::_body(HeaderTryInto::try_into(body)?))
+    }
 
-impl HasHeaderName for HeaderName {
-    fn get_name(&self) -> HeaderName {
-        *self
+    fn _body(body: Self::Component) -> Header<Self> {
+        Header::new(body)
     }
 }
 
 impl<H> HasHeaderName for H
-    where H: Header
+    where H: HeaderKind
 {
     fn get_name(&self) -> HeaderName {
         H::name()
+    }
+}
+
+pub trait MaxOneMarker: HeaderKind {}
+
+#[derive(Clone)]
+pub struct Header<H>
+    where H: HeaderKind
+{
+    body: H::Component
+}
+
+impl<H> Header<H>
+    where H: HeaderKind
+{
+    pub fn new(body: H::Component) -> Header<H> {
+        Header { body }
+    }
+
+    pub fn body(&self) -> &H::Component {
+        &self.body
+    }
+
+    pub fn body_mut(&mut self) -> &mut H::Component {
+        &mut self.body
+    }
+}
+
+impl<H> Deref for Header<H>
+    where H: HeaderKind
+{
+    type Target = H::Component;
+    fn deref(&self) -> &Self::Target {
+        self.body()
+    }
+}
+
+impl<H> Debug for Header<H>
+    where H: HeaderKind
+{
+    fn fmt(&self, fter: &mut fmt::Formatter) -> fmt::Result {
+        self.body.fmt(fter)
+    }
+}
+
+/// Type alias for HeaderObjTrait's trait object.
+pub type HeaderObj = dyn HeaderObjTrait;
+
+pub trait HeaderObjTrait: Sync + Send + ::std::any::Any + Debug {
+    fn name(&self) -> HeaderName;
+    fn is_max_one(&self) -> bool;
+    fn validator(&self) -> Option<HeaderMapValidator>;
+    fn encode(&self, encoder: &mut EncodingWriter) -> Result<(), EncodingError>;
+    fn boxed_clone(&self) -> Box<HeaderObj>;
+
+    #[doc(hidden)]
+    fn type_id(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
+}
+
+impl<H> HeaderObjTrait for Header<H>
+    where H: HeaderKind
+{
+    fn name(&self) -> HeaderName {
+        H::name()
+    }
+
+    fn is_max_one(&self) -> bool {
+        H::MAX_ONE
+    }
+
+    fn validator(&self) -> Option<HeaderMapValidator> {
+        H::VALIDATOR
+    }
+
+    fn encode(&self, encoder: &mut EncodingWriter) -> Result<(), EncodingError> {
+        self.body.encode(encoder)
+    }
+
+    fn boxed_clone(&self) -> Box<HeaderObj> {
+        let cloned = self.clone();
+        Box::new(cloned)
+    }
+}
+
+impl<H> HasHeaderName for Header<H>
+    where H: HeaderKind
+{
+    fn get_name(&self) -> HeaderName {
+        H::name()
+    }
+}
+
+
+impl HeaderObj {
+    pub fn is<H>(&self) -> bool
+        where H: HeaderKind
+    {
+        self.type_id() == TypeId::of::<Header<H>>()
+    }
+
+    pub fn downcast_ref<H>(&self) -> Option<&Header<H>>
+        where H: HeaderKind
+    {
+        if self.is::<H>() {
+            Some(unsafe { &*(self as *const _ as *const Header<H>) })
+        } else {
+            None
+        }
+    }
+
+    pub fn downcast_mut<H>(&mut self) -> Option<&mut Header<H>>
+        where H: HeaderKind
+    {
+        if self.is::<H>() {
+            Some(unsafe { &mut *(self as *mut _ as *mut Header<H>) })
+        } else {
+            None
+        }
+    }
+}
+
+impl Clone for Box<HeaderObj> {
+    fn clone(&self) -> Self {
+        self.boxed_clone()
+    }
+}
+
+impl HasHeaderName for HeaderObj {
+    fn get_name(&self) -> HeaderName {
+        self.name()
+    }
+}
+
+pub trait HeaderObjTraitBoxExt: Sized {
+    fn downcast<H>(self) -> Result<Box<Header<H>>, Self>
+        where H: HeaderKind;
+}
+
+impl HeaderObjTraitBoxExt for Box<HeaderObjTrait> {
+
+    fn downcast<H>(self) -> Result<Box<Header<H>>, Self>
+        where H: HeaderKind
+    {
+        if HeaderObjTrait::is::<H>(&*self) {
+            let ptr: *mut (HeaderObj) = Box::into_raw(self);
+            Ok(unsafe { Box::from_raw(ptr as *mut Header<H>) })
+        } else {
+            Err(self)
+        }
     }
 }

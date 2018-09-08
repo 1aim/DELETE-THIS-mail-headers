@@ -114,6 +114,19 @@ pub struct InvalidHeaderName {
     invalid_name: String
 }
 
+
+/// a utility trait allowing us to use type hint structs
+/// in `HeaderMap::{contains, get_untyped}`
+pub trait HasHeaderName {
+    fn get_name(&self) -> HeaderName;
+}
+
+impl HasHeaderName for HeaderName {
+    fn get_name(&self) -> HeaderName {
+        *self
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

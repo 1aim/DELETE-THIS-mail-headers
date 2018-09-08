@@ -6,59 +6,60 @@ use self::validators::{
     resent_any as validator_resent_any
 };
 
+
 def_headers! {
     test_name: validate_header_names,
     scope: header_components,
     /// (rfc5322)
-    Date,         unchecked { "Date"          },  DateTime,       maxOne,
+    Date,         unchecked { "Date"          },  DateTime,       maxOne,   None,
     /// (rfc5322)
-    _From,        unchecked { "From"          },  MailboxList,    validator_from,
+    _From,        unchecked { "From"          },  MailboxList,    maxOne,   validator_from,
     /// (rfc5322)
-    Sender,       unchecked { "Sender"        },  Mailbox,        maxOne,
+    Sender,       unchecked { "Sender"        },  Mailbox,        maxOne,   None,
     /// (rfc5322)
-    ReplyTo,      unchecked { "Reply-To"      },  MailboxList,    maxOne,
+    ReplyTo,      unchecked { "Reply-To"      },  MailboxList,    maxOne,   None,
     /// (rfc5322)
-    _To,          unchecked { "To"            },  MailboxList,    maxOne,
+    _To,          unchecked { "To"            },  MailboxList,    maxOne,   None,
     /// (rfc5322)
-    Cc,           unchecked { "Cc"            },  MailboxList,    maxOne,
+    Cc,           unchecked { "Cc"            },  MailboxList,    maxOne,   None,
     /// (rfc5322)
-    Bcc,          unchecked { "Bcc"           },  MailboxList,    maxOne,
+    Bcc,          unchecked { "Bcc"           },  MailboxList,    maxOne,   None,
     /// (rfc5322)
-    MessageId,    unchecked { "Message-Id"    },  MessageId,      maxOne,
+    MessageId,    unchecked { "Message-Id"    },  MessageId,      maxOne,   None,
     /// (rfc5322)
-    InReplyTo,    unchecked { "In-Reply-To"   },  MessageIdList,  maxOne,
+    InReplyTo,    unchecked { "In-Reply-To"   },  MessageIdList,  maxOne,   None,
     /// (rfc5322)
-    References,   unchecked { "References"    },  MessageIdList,  maxOne,
+    References,   unchecked { "References"    },  MessageIdList,  maxOne,   None,
     /// (rfc5322)
-    Subject,      unchecked { "Subject"       },  Unstructured,   maxOne,
+    Subject,      unchecked { "Subject"       },  Unstructured,   maxOne,   None,
     /// (rfc5322)
-    Comments,     unchecked { "Comments"      },  Unstructured,   None,
+    Comments,     unchecked { "Comments"      },  Unstructured,   multi,    None,
     /// (rfc5322)
-    Keywords,     unchecked { "Keywords"      },  PhraseList,     None,
+    Keywords,     unchecked { "Keywords"      },  PhraseList,     multi,    None,
     /// (rfc5322)
-    ResentDate,   unchecked { "Resent-Date"   },  DateTime,       validator_resent_any,
+    ResentDate,   unchecked { "Resent-Date"   },  DateTime,       multi,    validator_resent_any,
     /// (rfc5322)
-    ResentFrom,   unchecked { "Resent-From"   },  MailboxList,    validator_resent_any,
+    ResentFrom,   unchecked { "Resent-From"   },  MailboxList,    multi,    validator_resent_any,
     /// (rfc5322)
-    ResentSender, unchecked { "Resent-Sender" },  Mailbox,        validator_resent_any,
+    ResentSender, unchecked { "Resent-Sender" },  Mailbox,        multi,    validator_resent_any,
     /// (rfc5322)
-    ResentTo,     unchecked { "Resent-To"     },  MailboxList,    validator_resent_any,
+    ResentTo,     unchecked { "Resent-To"     },  MailboxList,    multi,    validator_resent_any,
     /// (rfc5322)
-    ResentCc,     unchecked { "Resent-Cc"     },  MailboxList,    validator_resent_any,
+    ResentCc,     unchecked { "Resent-Cc"     },  MailboxList,    multi,    validator_resent_any,
     /// (rfc5322)
-    ResentBcc,    unchecked { "Resent-Bcc"    },  OptMailboxList, validator_resent_any,
+    ResentBcc,    unchecked { "Resent-Bcc"    },  OptMailboxList, multi,    validator_resent_any,
     /// (rfc5322)
-    ResentMsgId,  unchecked { "Resent-Msg-Id" },  MessageId,      validator_resent_any,
+    ResentMsgId,  unchecked { "Resent-Msg-Id" },  MessageId,      multi,    validator_resent_any,
     /// (rfc5322)
-    ReturnPath,   unchecked { "Return-Path"   },  Path,           None,
+    ReturnPath,   unchecked { "Return-Path"   },  Path,           multi,    None,
     /// (rfc5322)
-    Received,     unchecked { "Received"      },  ReceivedToken,  None,
+    Received,     unchecked { "Received"      },  ReceivedToken,  multi,    None,
 
     /// (rfc2045)
-    ContentType,  unchecked { "Content-Type"  }, MediaType,        maxOne,
+    ContentType,  unchecked { "Content-Type"  }, MediaType,       maxOne,   None,
 
     /// (rfc2045)
-    ContentId,    unchecked { "Content-Id"    }, ContentId,        maxOne,
+    ContentId,    unchecked { "Content-Id"    }, ContentId,       maxOne,   None,
 
     /// The transfer encoding used to (transfer) encode the body (rfc2045)
     ///
@@ -84,13 +85,13 @@ def_headers! {
     ///
     /// Nevertheless this encodings are mainly meant to be used for defining the
     /// domain of data in a system before it is encoded.
-    ContentTransferEncoding, unchecked { "Content-Transfer-Encoding" }, TransferEncoding, maxOne,
+    ContentTransferEncoding, unchecked { "Content-Transfer-Encoding" }, TransferEncoding, maxOne, None,
 
     /// A description of the content of the body (rfc2045)
     ///
     /// This is mainly usefull for multipart body parts, e.g.
     /// to add an description to a inlined/attached image.
-    ContentDescription,   unchecked { "Content-Description"       }, Unstructured,     maxOne,
+    ContentDescription,   unchecked { "Content-Description"       }, Unstructured, maxOne, None,
 
     /// Defines the disposition of a multipart part it is used on (rfc2183)
     ///
@@ -110,14 +111,13 @@ def_headers! {
     /// - `read-date`: when the resource this body is based on was read (to create the body)
     /// - `size`: the size this resource should have, note that `Content-Size` is NOT a mail
     ///           related header but specific to http.
-    ContentDisposition, unchecked { "Content-Disposition"       }, Disposition, maxOne
+    ContentDisposition, unchecked { "Content-Disposition"       }, Disposition, maxOne, None
 }
 
 mod validators {
     use std::collections::HashMap;
 
-    use common::encoder::EncodableInHeader;
-    use ::{ HeaderMap, Header, HeaderName };
+    use ::{ HeaderMap, HeaderKind, HeaderName, HeaderObj };
     use ::error::HeaderValidationError;
 
     use super::{ _From, ResentFrom, Sender, ResentSender, ResentDate };
@@ -143,7 +143,7 @@ mod validators {
     }
 
     fn validate_resent_block<'a>(
-            block: &HashMap<HeaderName, &'a EncodableInHeader>
+            block: &HashMap<HeaderName, &'a HeaderObj>
     ) -> Result<(), HeaderValidationError> {
         if !block.contains_key(&ResentDate::name()) {
             //this is the wrong bail...
@@ -153,7 +153,7 @@ mod validators {
             //no Resend-From? => no problem
             block.get(&ResentFrom::name())
                 //can't cast? => not my problem/responsibility
-                .and_then(|tobj| tobj.downcast_ref::<<ResentFrom as Header>::Component>())
+                .and_then(|tobj| tobj.downcast_ref::<ResentFrom>())
                 .map(|list| list.len() > 1)
                 .unwrap_or(false);
 
@@ -185,99 +185,92 @@ mod validators {
 #[cfg(test)]
 mod test {
     use ::header_components::DateTime;
-    use ::HeaderMap;
+    use ::{HeaderMap, HeaderKind};
     use ::headers::{
         _From, ResentFrom, ResentTo, ResentDate,
         Sender, ResentSender, Subject
     };
 
-    #[test]
-    fn from_validation_normal() {
+    test!(from_validation_normal {
         let mut map = HeaderMap::new();
-        map.set(_From, [("Mr. Peté", "pete@nixmail.nixdomain")]).unwrap();
-        map.set(Subject, "Ok").unwrap();
+        map.insert(_From   ::body( [("Mr. Peté", "pete@nixmail.example")] )?);
+        map.insert(Subject ::body( "Ok"                                   )?);
 
         assert_ok!(map.use_contextual_validators());
-    }
-    #[test]
-    fn from_validation_multi_err() {
+    });
+
+    test!(from_validation_multi_err {
         let mut map = HeaderMap::new();
-        map.set(_From, (
+        map.insert(_From::body((
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
-        )).unwrap();
-        map.set(Subject, "Ok").unwrap();
+        ))?);
+        map.insert(Subject::body("Ok")?);
 
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn from_validation_multi_ok() {
+    test!(from_validation_multi_ok {
         let mut map = HeaderMap::new();
-        map.set(_From, (
+        map.insert(_From::body((
             ("Mr. Peté", "nixperson@nixmail.nixdomain"),
             "a@b.c"
-        )).unwrap();
-        map.set(Sender, "abx@d.e").unwrap();
-        map.set(Subject, "Ok").unwrap();
+        ))?);
+        map.insert(Sender  ::body(  "abx@d.e" )?);
+        map.insert(Subject ::body(  "Ok"      )?);
 
         assert_ok!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_no_date_err() {
+    test!(resent_no_date_err {
         let mut map = HeaderMap::new();
-        map.set(ResentFrom,["a@b.c"]).unwrap();
+        map.insert(ResentFrom ::body( ["a@b.c"] )?);
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_with_date() {
+    test!(resent_with_date {
         let mut map = HeaderMap::new();
-        map.add(ResentFrom,["a@b.c"]).unwrap();
-        map.add(ResentDate, DateTime::now()).unwrap();
+        map.insert(ResentFrom ::body( ["a@b.c"]       )?);
+        map.insert(ResentDate ::body( DateTime::now() )?);
         assert_ok!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_no_date_err_second_block() {
+    test!(resent_no_date_err_second_block {
         let mut map = HeaderMap::new();
-        map.add(ResentDate, DateTime::now()).unwrap();
-        map.add(ResentFrom,["a@b.c"]).unwrap();
-        map.add(ResentTo, ["e@f.d"]).unwrap();
-        map.add(ResentFrom, ["ee@ee.e"]).unwrap();
+        map.insert(ResentDate ::body( DateTime::now() )?);
+        map.insert(ResentFrom ::body( ["a@b.c"]       )?);
+        map.insert(ResentTo   ::body( ["e@f.d"]       )?);
+        map.insert(ResentFrom ::body( ["ee@ee.e"]     )?);
 
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_with_date_second_block() {
+    test!(resent_with_date_second_block {
         let mut map = HeaderMap::new();
-        map.add(ResentDate, DateTime::now()).unwrap();
-        map.add(ResentFrom,["a@b.c"]).unwrap();
-        map.add(ResentTo, ["e@f.d"]).unwrap();
-        map.add(ResentFrom, ["ee@ee.e"]).unwrap();
-        map.add(ResentDate, DateTime::now()).unwrap();
+        map.insert(ResentDate ::body( DateTime::now() )?);
+        map.insert(ResentFrom ::body( ["a@b.c"]       )?);
+        map.insert(ResentTo   ::body( ["e@f.d"]       )?);
+        map.insert(ResentFrom ::body( ["ee@ee.e"]     )?);
+        map.insert(ResentDate ::body( DateTime::now() )?);
 
         assert_ok!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_multi_mailbox_from_no_sender() {
+    test!(resent_multi_mailbox_from_no_sender {
+
         let mut map = HeaderMap::new();
-        map.add(ResentDate, DateTime::now()).unwrap();
-        map.add(ResentFrom, ["a@b.c","e@c.d"]).unwrap();
+        map.insert(ResentDate ::body( DateTime::now()   )?);
+        map.insert(ResentFrom ::body( ["a@b.c","e@c.d"] )?);
 
         assert_err!(map.use_contextual_validators());
-    }
+    });
 
-    #[test]
-    fn resent_multi_mailbox_from_with_sender() {
+    test!(resent_multi_mailbox_from_with_sender {
         let mut map = HeaderMap::new();
-        map.add(ResentDate, DateTime::now()).unwrap();
-        map.add(ResentFrom, ["a@b.c","e@c.d"]).unwrap();
-        map.add(ResentSender, "a@b.c").unwrap();
-
+        map.insert(ResentDate   ::body( DateTime::now()   )?);
+        map.insert(ResentFrom   ::body( ["a@b.c","e@c.d"] )?);
+        map.insert(ResentSender ::body( "a@b.c"           )?);
         assert_ok!(map.use_contextual_validators());
-    }
+    });
+
 }

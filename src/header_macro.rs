@@ -75,14 +75,16 @@ macro_rules! def_headers {
         scope: $scope:ident,
         $(
             $(#[$attr:meta])*
-            $name:ident, unchecked { $hname:tt }, $component:ident, $validator:ident
+            $name:ident, unchecked { $hname:tt }, $component:ident,
+              $maxOne:ident, $validator:ident
         ),+
     ) => (
         $(
             $(#[$attr])*
+            #[derive(Default, Copy, Clone)]
             pub struct $name;
 
-            impl $crate::Header for  $name {
+            impl $crate::HeaderKind for $name {
 
                 type Component = $scope::$component;
 
@@ -91,9 +93,12 @@ macro_rules! def_headers {
                     $crate::HeaderName::from_ascii_unchecked( as_str )
                 }
 
+                const MAX_ONE: bool = def_headers!{ _PRIV_mk_max_one $maxOne };
                 const VALIDATOR: ::std::option::Option<$crate::map::HeaderMapValidator> =
-                        def_headers!{ _PRIV_mk_validator $name, $validator };
+                        def_headers!{ _PRIV_mk_validator $validator };
             }
+
+            def_headers!{ _PRIV_mk_marker_impl $name, $maxOne }
         )+
 
         //TODO warn if header type name and header name diverges
@@ -135,16 +140,20 @@ macro_rules! def_headers {
             }
         }
     );
-    (_PRIV_mk_validator $name:ident, None) => ({ None });
-    (_PRIV_mk_validator $name:ident, maxOne) => ({
-        fn max_one(map: &$crate::HeaderMap)
-            -> ::std::result::Result<(), $crate::error::HeaderValidationError>
-        {
-            let name = $name::name();
-            $crate::map::check_header_count_max_one(name, map)
-        }
-
-        Some(max_one as $crate::map::HeaderMapValidator)
-    });
-    (_PRIV_mk_validator $name:ident, $validator:ident) => ({ Some($validator) });
+    (_PRIV_mk_marker_impl $name:ident, multi) => ();
+    (_PRIV_mk_marker_impl $name:ident, maxOne) => (
+        impl $crate::MaxOneMarker for $name {}
+    );
+    (_PRIV_mk_marker_impl $name:ident, $other:ident) => (def_headers!{ _PRIV_max_one_err $other });
+    (_PRIV_mk_validator None) => ({ None });
+    (_PRIV_mk_validator $validator:ident) => ({ Some($validator) });
+    (_PRIV_mk_max_one multi) => ({ false });
+    (_PRIV_mk_max_one maxOne) => ({ true });
+    (_PRIV_mk_max_one $other:ident) => (def_headers!{ _PRIV_max_one_err $other });
+    (_PRIV_max_one_err $other:ident) => (
+        compile_error!(concat!(
+            "maxOne column can only contain `maxOne` or `multi`, got: ",
+            stringify!($other)
+        ));
+    );
 }
