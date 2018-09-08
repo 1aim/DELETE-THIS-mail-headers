@@ -71,6 +71,7 @@ macro_rules! test {
         fn $name() {
             fn inner() -> Result<(), ::failure::Error> {
                 $code;
+                #[allow(unreachable_code)]
                 Ok(())
             }
             inner().unwrap();

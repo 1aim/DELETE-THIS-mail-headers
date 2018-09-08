@@ -196,14 +196,34 @@ impl HeaderMap {
     ///
     /// If multiple Headers provide the same contextual validator (e.g. the resent headers)
     /// it's still only called once.
+    ///
+    /// # Max One
+    ///
+    /// This will also validate that for any header name for which a header
+    /// was added with `MAX_ONE == true` it will be validated that it is the
+    /// only header for that header name.
     pub fn use_contextual_validators(&self) -> Result<(), HeaderValidationError> {
         let mut seen_validators = HashSet::new();
-        let validators = self.values()
-            .filter_map(|hobj| hobj.validator());
 
-        for validator in validators {
-            if seen_validators.insert(ValidatorHashWrapper(validator)) {
-                (validator)(self)?;
+        let mut validate = |validator| -> Result<(), HeaderValidationError> {
+            if let Some(validator) = validator {
+                if seen_validators.insert(ValidatorHashWrapper(validator)) {
+                    (validator)(self)?;
+                }
+            }
+            Ok(())
+        };
+
+        for mut group in self.inner_map.group_iter() {
+            let first = group.next().expect("[BUG] returned header without any headers inserted for it");
+            let max_one = first.is_max_one();
+            validate(first.validator())?;
+            let header_name = group.key().as_str();
+            for other in group {
+                if max_one != other.is_max_one() {
+                     return Err(BuildInValidationError::MaxOneInconsistency { header_name }.into());
+                }
+                validate(other.validator())?;
             }
         }
         Ok(())
@@ -657,6 +677,9 @@ mod test {
         Subject as BadSubject,
         Comments as BadComments
     };
+    use self::bad_headers2::{
+        Comments2 as BadComments2
+    };
 
     #[derive(Debug, Clone, Eq, PartialEq, Hash)]
     pub struct OtherComponent;
@@ -696,9 +719,32 @@ mod test {
             Comments, unchecked { "Comments" }, OtherComponent, multi, None
         }
     }
+    mod bad_headers2 {
+        def_headers! {
+            test_name: validate_header_names2,
+            scope: super,
+            Comments2, unchecked { "Comments" }, OtherComponent, maxOne, None
+        }
+    }
 
     const TEXT_1: &str = "Random stuff XD";
     const TEXT_2: &str = "Having a log of fun, yes a log!";
+
+    test!(max_one_mixup {
+        let headers = headers! {
+            BadComments2: (),
+            BadComments: ()
+        }?;
+
+        let res = headers.use_contextual_validators();
+        if let Err(HeaderValidationError::BuildIn(berr)) = res {
+            if let BuildInValidationError::MaxOneInconsistency { ..} = berr.get_context() {
+                return Ok(());
+            }
+            panic!("unexpected error: {:?}", berr);
+        }
+        panic!("unexpected result: {:?}", res);
+    });
 
     #[test]
     fn headers_macro() {

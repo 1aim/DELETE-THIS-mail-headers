@@ -60,8 +60,16 @@ impl From<Context<BuildInValidationError>> for HeaderValidationError {
 #[derive(Copy, Clone, Debug, Fail, PartialEq, Eq, Hash)]
 pub enum BuildInValidationError {
 
+    /// This error is returned by `use_contextual_validators` if there is a "max one" inconsistency.
+    ///
+    /// I.e. if multiple implementations of the same header are used in the same map but
+    /// the implementations do not agree on wether or not the header can appear at most one
+    /// time in a header section.
+    #[fail(display = "{} header field contained both \"multi\" and \"max one\" header impl", header_name)]
+    MaxOneInconsistency { header_name: &'static str },
+
     #[fail(display = "{} header field can appear at most one time in a header map", header_name)]
-    MoreThenOne{ header_name: &'static str },
+    MoreThenOne { header_name: &'static str },
 
     #[fail(display = "From field contained multiple addresses but no Sender field was set")]
     MultiMailboxFromWithoutSender,
