@@ -78,34 +78,7 @@ pub enum BuildInValidationError {
     ResentDateFieldMissing,
 
     #[fail(display = "Resent-From field in resent block without a Resent-Sender field")]
-    MultiMailboxResentFromWithoutResentSender,
-
-    #[fail(display = "From field missing")]
-    NoFrom,
-
-    // theoretically content type is optional practically it's recommended even
-    // for plain text mails, to indicate that they are indeed plain text mails
-    #[fail(display = "Content-Type field missing")]
-    NoContentType,
-
-    #[fail(display = "Content-Type header misses boundary parameter in multipart body")]
-    NoMultipartBoundary,
-
-    #[fail(display = "multipart bodies need to contain at last one part (/sub-body)")]
-    EmptyMultipartBody,
-
-    /// Indicates the `To` header is missing
-    ///
-    /// While rfc5322 does not require a `To` header
-    /// field, it's a sane choice to reject mails without
-    /// it.
-    ///
-    /// This error is _not_ used by the general validation,
-    /// provided with this crate, but can be used e.g. by
-    /// external libraries which do generate mails.
-    #[fail(display = "missing To header field")]
-    NoTo,
-
+    MultiMailboxResentFromWithoutResentSender
 }
 
 macro_rules! header_validation_bail {
