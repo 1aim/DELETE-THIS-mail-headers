@@ -1,5 +1,5 @@
 use std::any::TypeId;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::fmt::{self, Debug};
 
 use common::{
@@ -113,6 +113,14 @@ impl<H> Deref for Header<H>
     type Target = H::Component;
     fn deref(&self) -> &Self::Target {
         self.body()
+    }
+}
+
+impl<H> DerefMut for Header<H>
+    where H: HeaderKind
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.body_mut()
     }
 }
 
