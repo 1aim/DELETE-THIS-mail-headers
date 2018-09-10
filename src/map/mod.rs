@@ -418,10 +418,10 @@ impl HeaderMap {
         }
     }
 
-    /// remove all headers with the given header name
+    /// Remove all headers with the given header name.
     ///
-    /// returns true, if at last one header was removed
-    pub fn remove_by_name<H: HasHeaderName>(&mut self, name: H) -> bool {
+    /// Returns true, if at last one header was removed.
+    pub fn remove<H: HasHeaderName>(&mut self, name: H) -> bool {
         self.inner_map.remove_all(name.get_name())
     }
 
@@ -906,8 +906,8 @@ mod test {
             Comments: "d"
         }?;
 
-        assert_eq!( false, headers.remove_by_name( XComment::name() ) );
-        assert_eq!( true, headers.remove_by_name( Subject::name() ) );
+        assert_eq!( false, headers.remove(XComment::name()));
+        assert_eq!( true, headers.remove(Subject::name()));
 
         assert_eq!( 3, headers.iter().count() );
 
@@ -929,8 +929,8 @@ mod test {
             Comments: "d"
         }?;
 
-        assert_eq!(true, headers.remove_by_name(Comments::name()));
-        assert_eq!(false, headers.remove_by_name(Comments::name()));
+        assert_eq!(true, headers.remove(Comments::name()));
+        assert_eq!(false, headers.remove(Comments::name()));
 
         assert_eq!(1, headers.iter().count());
 
