@@ -259,7 +259,7 @@ impl HeaderMap {
     ///   in some rare situations lead to be there more then one header for
     ///   a "max one" header in the map, in which case a `HeaderTypeError`
     ///   is returned.
-    #[inline(always)]
+    #[inline]
     pub fn get_single<'a, H>(&'a self, _type_hint: H)
         -> Option<Result<&'a Header<H>, HeaderTypeError>>
         where H: MaxOneMarker
@@ -282,6 +282,35 @@ impl HeaderMap {
 
         bodies.next().map(|untyped| {
             untyped.downcast_ref::<H>()
+                .ok_or_else(|| HeaderTypeError::new(H::name()))
+        })
+    }
+
+    /// Returns a a mutable reference to the header associated with the given header kind.__common
+    ///
+    /// See `HeaderMap::get_single` for more details.
+    #[inline]
+    pub fn get_single_mut<H>(&mut self, _type_hint: H)
+        -> Option<Result<&mut Header<H>, HeaderTypeError>>
+        where H: MaxOneMarker
+    {
+        self._get_single_mut::<H>()
+    }
+
+    /// Returns a a mutable reference to the header associated with the given header kind.__common
+    ///
+    /// See `HeaderMap::_get_single` for more details.
+    pub fn _get_single_mut<H>(&mut self)
+        -> Option<Result<&mut Header<H>, HeaderTypeError>>
+        where H: MaxOneMarker
+    {
+        let mut bodies = self.get_untyped_mut(H::name());
+        if bodies.len() > 1 {
+            return Some(Err(HeaderTypeError::new(H::name())))
+        }
+
+        bodies.next().map(|untyped| {
+            untyped.downcast_mut::<H>()
                 .ok_or_else(|| HeaderTypeError::new(H::name()))
         })
     }
