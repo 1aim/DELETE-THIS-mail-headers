@@ -2,9 +2,10 @@ use std::ops::Deref;
 use std::sync::Arc;
 use std::borrow::ToOwned;
 
-use soft_ascii_string::{SoftAsciiString, SoftAsciiStr};
 use owning_ref::OwningRef;
+use soft_ascii_string::{SoftAsciiString, SoftAsciiStr};
 
+#[cfg(feature="serde-impl")]
 use serde;
 
 
@@ -114,6 +115,7 @@ macro_rules! inner_impl {
             }
         }
 
+        #[cfg(feature="serde-impl")]
         impl serde::Serialize for $name {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
                 where S: serde::Serializer

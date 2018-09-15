@@ -121,9 +121,6 @@ extern crate quoted_string;
 #[macro_use]
 extern crate failure;
 extern crate owning_ref;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 #[macro_use]
 extern crate nom;
 extern crate chrono;
@@ -135,11 +132,15 @@ extern crate total_order_multi_map;
 #[doc(hidden)]
 pub extern crate mail_common as __common;
 
-#[cfg(feature="serialize-content-id")]
+#[cfg(feature="serde-impl")]
+#[macro_use]
 extern crate serde;
 
 #[cfg(all(test, not(feature="traceing")))]
 compile_error! { "testing needs feature `traceing` to be enabled" }
+
+#[cfg(all(feature="serde-impl", not(feature="serde-impl")))]
+compile_error! { "you need to enable \"serde-impl\" when you enable \"serde\"" }
 
 #[macro_use]
 mod macros;

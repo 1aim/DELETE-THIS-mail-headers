@@ -1,6 +1,7 @@
 use chrono;
 use soft_ascii_string::SoftAsciiString;
 
+
 use common::encoder::{EncodingWriter, EncodableInHeader};
 use common::error::EncodingError;
 use ::HeaderTryFrom;
@@ -8,7 +9,12 @@ use ::error::ComponentCreationError;
 
 /// A DateTime header component wrapping chrono::DateTime<chrono::Utc>
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
-pub struct DateTime(chrono::DateTime<chrono::Utc>);
+#[cfg_attr(feature="serde-impl", derive(Serialize, Deserialize))]
+pub struct DateTime(
+    #[cfg_attr(feature="serde-impl", serde(deserialize_with = "super::utils::deserialize_time"))]
+    #[cfg_attr(feature="serde-impl", serde(serialize_with = "super::utils::serialize_time"))]
+    chrono::DateTime<chrono::Utc>
+);
 
 impl DateTime {
 
@@ -43,6 +49,7 @@ impl EncodableInHeader for DateTime {
     }
 }
 
+
 impl<TZ> HeaderTryFrom<chrono::DateTime<TZ>> for DateTime
     where TZ: chrono::TimeZone
 {
@@ -56,6 +63,12 @@ impl<TZ> From<chrono::DateTime<TZ>> for DateTime
 {
     fn from(val: chrono::DateTime<TZ>) -> Self {
         Self::new(val)
+    }
+}
+
+impl Into<chrono::DateTime<chrono::Utc>> for DateTime {
+    fn into(self) -> chrono::DateTime<chrono::Utc> {
+        self.0
     }
 }
 

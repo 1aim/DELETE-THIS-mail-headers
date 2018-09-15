@@ -5,7 +5,8 @@ use soft_ascii_string::{ SoftAsciiStr, SoftAsciiString};
 use super::input::Input;
 use super::inner_item::{ InnerAscii, InnerUtf8 };
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(feature="serde-impl", derive(Serialize))]
 pub enum SimpleItem {
     /// specifies that the Item is valid Ascii, nothing more
     Ascii( InnerAscii ),

@@ -3,7 +3,12 @@ use nom::IResult;
 
 use soft_ascii_string::{SoftAsciiChar, SoftAsciiStr, SoftAsciiString};
 use vec1::Vec1;
-use serde::{Serialize, Serializer};
+#[cfg(feature="serde-impl")]
+use serde::{
+    Serialize, Serializer,
+    Deserialize, Deserializer,
+    de::Error
+};
 
 use common::error::EncodingError;
 use common::encoder::{EncodingWriter, EncodableInHeader};
@@ -74,11 +79,42 @@ impl MessageId {
     }
 }
 
+#[cfg(feature="serde-impl")]
 impl Serialize for MessageId {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
         serializer.serialize_str(self.as_str())
+    }
+}
+
+#[cfg(feature="serde-impl")]
+impl<'de> Deserialize<'de> for MessageId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        let as_string = String::deserialize(deserializer)?;
+        let as_ascii = SoftAsciiStr::from_str(&as_string)
+            .map_err(|err| D::Error::custom(format!("message id is not ascii: {}", err)))?;
+
+        let split_point =
+            if as_ascii.as_str().ends_with("]") {
+                as_ascii.as_str()
+                    .bytes()
+                    .rposition(|bch| bch == b'[')
+                    .and_then(|pos| pos.checked_sub(1))
+                    .ok_or_else(|| D::Error::custom("invalid message id format"))?
+            } else {
+                as_ascii.as_str()
+                    .bytes()
+                    .rposition(|bch| bch == b'@')
+                    .ok_or_else(|| D::Error::custom("invalid message id format"))?
+            };
+
+        let left_part = &as_ascii[..split_point];
+        let right_part = &as_ascii[split_point+1..];
+        MessageId::new(left_part, right_part)
+            .map_err(|err| D::Error::custom(format!("invalid message id format: {}", err)))
     }
 }
 
@@ -128,6 +164,7 @@ impl EncodableInHeader for  MessageId {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature="serde-impl", derive(Serialize, Deserialize))]
 pub struct MessageIdList( pub Vec1<MessageId> );
 
 deref0!{ +mut MessageIdList => Vec1<MessageId> }

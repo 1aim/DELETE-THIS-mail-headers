@@ -8,6 +8,9 @@
 //!
 pub mod utils;
 
+mod file_meta;
+pub use self::file_meta::*;
+
 //reexport our components
 mod date_time;
 pub use self::date_time::DateTime;

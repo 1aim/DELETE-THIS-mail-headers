@@ -1,25 +1,35 @@
 use std::borrow::Cow;
+#[cfg(feature="serde-impl")]
+use std::fmt;
 
 use failure::Fail;
 use soft_ascii_string::SoftAsciiStr;
 use mime::push_params_to_buffer;
 use mime::spec::{MimeSpec, Ascii, Modern, Internationalized};
 
+#[cfg(feature="serde-impl")]
+use serde::{
+    Serialize, Serializer,
+    Deserialize, Deserializer,
+};
 
 use common::error::{EncodingError, EncodingErrorKind};
 use common::encoder::{EncodableInHeader, EncodingWriter};
-use common::utils::FileMeta;
 use ::HeaderTryFrom;
 use ::error::ComponentCreationError;
 
+use super::FileMeta;
+
 /// Disposition Component mainly used for the Content-Disposition header (rfc2183)
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature="serde-impl", derive(Serialize, Deserialize))]
 pub struct Disposition {
     kind: DispositionKind,
     file_meta: DispositionParameters
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+#[cfg_attr(feature="serde-impl", derive(Serialize, Deserialize))]
 struct DispositionParameters(FileMeta);
 
 /// Represents what kind of disposition is used (Inline/Attachment)
@@ -33,7 +43,6 @@ pub enum DispositionKind {
     /// Display the body as an attachment to of the mail.
     Attachment
 }
-
 
 impl Disposition {
 
@@ -67,6 +76,52 @@ impl Disposition {
         &mut self.file_meta
     }
 
+}
+
+#[cfg(feature="serde-impl")]
+impl Serialize for DispositionKind {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        match self {
+            &DispositionKind::Inline =>
+                serializer.serialize_str("inline"),
+            &DispositionKind::Attachment =>
+                serializer.serialize_str("attachment")
+        }
+    }
+}
+
+#[cfg(feature="serde-impl")]
+impl<'de> Deserialize<'de> for DispositionKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for Visitor {
+            type Value = DispositionKind;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("\"inline\" or \"attachment\"")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+                where E: ::serde::de::Error,
+            {
+                if value.eq_ignore_ascii_case("inline") {
+                    Ok(DispositionKind::Inline)
+                } else if value.eq_ignore_ascii_case("attachment") {
+                    Ok(DispositionKind::Attachment)
+                } else {
+                    Err(E::custom(format!(
+                        "unknown disposition: {:?}", value
+                    )))
+                }
+            }
+        }
+
+        deserializer.deserialize_str(Visitor)
+    }
 }
 
 /// This try from is for usability only, it is
