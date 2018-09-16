@@ -139,7 +139,7 @@ extern crate serde;
 #[cfg(all(test, not(feature="traceing")))]
 compile_error! { "testing needs feature `traceing` to be enabled" }
 
-#[cfg(all(feature="serde-impl", not(feature="serde-impl")))]
+#[cfg(all(feature="serde", not(feature="serde-impl")))]
 compile_error! { "you need to enable \"serde-impl\" when you enable \"serde\"" }
 
 #[macro_use]

@@ -290,4 +290,19 @@ mod test {
         assert_err!( Disposition::try_from( "In line") );
     }
 
+    #[cfg(feature="serde")]
+    fn assert_serialize<S: ::serde::Serialize>() {}
+    #[cfg(feature="serde")]
+    fn assert_deserialize<S: ::serde::Serialize>() {}
+
+    #[cfg(feature="serde")]
+    #[test]
+    fn disposition_serialization() {
+        assert_serialize::<Disposition>();
+        assert_serialize::<DispositionKind>();
+        assert_serialize::<DispositionParameters>();
+        assert_deserialize::<Disposition>();
+        assert_deserialize::<DispositionKind>();
+        assert_deserialize::<DispositionParameters>();
+    }
 }
