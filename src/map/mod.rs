@@ -628,7 +628,7 @@ macro_rules! headers {
         {
             let mut map = $crate::HeaderMap::new();
             $(
-                map.insert(<$header as $crate::HeaderKind>::body($val)?);
+                map.insert(<$header as $crate::HeaderKind>::auto_body($val)?);
             )*
             Ok(map)
         })()

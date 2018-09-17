@@ -63,13 +63,24 @@ pub trait HeaderKind: Clone + Default + 'static {
     /// Most headers have this set to true.
     const MAX_ONE: bool;
 
-    fn body<H>(body: H) -> Result<Header<Self>, ComponentCreationError>
+    /// Creates a `Header` instance automatically converting given body to the right type.
+    ///
+    /// # Error
+    ///
+    /// The type system assure that you can only use it on conversions
+    /// which are possible on type level, but they can still fail depending
+    /// on the actual data. For example creating a `Email`  from a string
+    /// can fail if the string is not a valid email address. This in
+    /// turn means that creating a `From` header from a array of strings
+    /// can fail if one of them is not a valid email address.
+    fn auto_body<H>(body: H) -> Result<Header<Self>, ComponentCreationError>
         where H: HeaderTryInto<Self::Component>
     {
-        Ok(Self::_body(HeaderTryInto::try_into(body)?))
+        Ok(Self::body(HeaderTryInto::try_into(body)?))
     }
 
-    fn _body(body: Self::Component) -> Header<Self> {
+    /// Creates a `Header` instance for this header kind with given body.
+    fn body(body: Self::Component) -> Header<Self> {
         Header::new(body)
     }
 }
