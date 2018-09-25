@@ -2,6 +2,8 @@
 use chrono::DateTime;
 use chrono::Utc;
 
+use std::mem::replace;
+
 /// A struct representing common file metadata.
 ///
 /// This is used by e.g. attachments, when attaching
@@ -50,4 +52,29 @@ pub struct FileMeta {
     /// like external headers.
     #[cfg_attr(feature="serde-impl", serde(default))]
     pub size: Option<usize>
+}
+
+macro_rules! impl_replace_none {
+    ($self_:expr, $other:expr, [$($field:ident),*]) => ({
+        let &mut FileMeta {$(
+            ref mut $field
+        ),*} = $self_;
+
+        $(
+            if $field.is_none() {
+                replace($field, $other.$field.clone());
+            }
+        )*
+    })
+}
+
+impl FileMeta {
+
+    /// Replaces all fields which are `None` with the value of the field in `other_meta`.
+    pub fn replace_empty_fields_with(&mut self, other_meta: &Self) {
+        impl_replace_none! {
+            self, other_meta,
+            [file_name, creation_date, modification_date, read_date, size]
+        }
+    }
 }
