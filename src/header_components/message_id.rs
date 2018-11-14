@@ -3,7 +3,7 @@ use nom::IResult;
 
 use soft_ascii_string::{SoftAsciiChar, SoftAsciiStr, SoftAsciiString};
 use vec1::Vec1;
-#[cfg(feature="serde-impl")]
+#[cfg(feature="serde")]
 use serde::{
     Serialize, Serializer,
     Deserialize, Deserializer,
@@ -79,7 +79,7 @@ impl MessageId {
     }
 }
 
-#[cfg(feature="serde-impl")]
+#[cfg(feature="serde")]
 impl Serialize for MessageId {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
@@ -88,7 +88,7 @@ impl Serialize for MessageId {
     }
 }
 
-#[cfg(feature="serde-impl")]
+#[cfg(feature="serde")]
 impl<'de> Deserialize<'de> for MessageId {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
@@ -164,7 +164,7 @@ impl EncodableInHeader for  MessageId {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature="serde-impl", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct MessageIdList( pub Vec1<MessageId> );
 
 deref0!{ +mut MessageIdList => Vec1<MessageId> }

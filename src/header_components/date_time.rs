@@ -7,12 +7,14 @@ use common::error::EncodingError;
 use ::HeaderTryFrom;
 use ::error::ComponentCreationError;
 
+#[cfg(feature="serde")]
+use serde::{Serialize, Deserialize};
+
 /// A DateTime header component wrapping chrono::DateTime<chrono::Utc>
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
-#[cfg_attr(feature="serde-impl", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct DateTime(
-    #[cfg_attr(feature="serde-impl", serde(deserialize_with = "super::utils::deserialize_time"))]
-    #[cfg_attr(feature="serde-impl", serde(serialize_with = "super::utils::serialize_time"))]
+    #[cfg_attr(feature="serde", serde(with = "super::utils::serde::date_time"))]
     chrono::DateTime<chrono::Utc>
 );
 

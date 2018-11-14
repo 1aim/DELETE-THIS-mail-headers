@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-#[cfg(feature="serde-impl")]
+#[cfg(feature="serde")]
 use std::fmt;
 
 use failure::Fail;
@@ -7,7 +7,7 @@ use soft_ascii_string::SoftAsciiStr;
 use mime::push_params_to_buffer;
 use mime::spec::{MimeSpec, Ascii, Modern, Internationalized};
 
-#[cfg(feature="serde-impl")]
+#[cfg(feature="serde")]
 use serde::{
     Serialize, Serializer,
     Deserialize, Deserializer,
@@ -22,14 +22,14 @@ use super::FileMeta;
 
 /// Disposition Component mainly used for the Content-Disposition header (rfc2183)
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-#[cfg_attr(feature="serde-impl", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct Disposition {
     kind: DispositionKind,
     file_meta: DispositionParameters
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
-#[cfg_attr(feature="serde-impl", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 struct DispositionParameters(FileMeta);
 
 /// Represents what kind of disposition is used (Inline/Attachment)
@@ -78,7 +78,7 @@ impl Disposition {
 
 }
 
-#[cfg(feature="serde-impl")]
+#[cfg(feature="serde")]
 impl Serialize for DispositionKind {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
@@ -92,7 +92,7 @@ impl Serialize for DispositionKind {
     }
 }
 
-#[cfg(feature="serde-impl")]
+#[cfg(feature="serde")]
 impl<'de> Deserialize<'de> for DispositionKind {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>

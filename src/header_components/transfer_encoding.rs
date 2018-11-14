@@ -3,13 +3,23 @@ use soft_ascii_string::SoftAsciiStr;
 use common::error::EncodingError;
 use common::encoder::{EncodingWriter, EncodableInHeader};
 
+#[cfg(feature="serde")]
+use serde::{Serialize, Deserialize};
+
+
 /// The TransferEnecoding header component mainly used by the ContentTransferEncodingHeader.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub enum TransferEncoding {
+    #[cfg_attr(feature="serde", serde(rename="7bit"))]
     _7Bit,
+    #[cfg_attr(feature="serde", serde(rename="8bit"))]
     _8Bit,
+    #[cfg_attr(feature="serde", serde(rename="binary"))]
     Binary,
+    #[cfg_attr(feature="serde", serde(rename="quoted-printable"))]
     QuotedPrintable,
+    #[cfg_attr(feature="serde", serde(rename="base64"))]
     Base64
 }
 
@@ -73,6 +83,35 @@ mod test {
     } => ascii => [
         Text "quoted-printable"
     ]}
+
+    #[cfg(feature="serde")]
+    mod serde {
+        use serde_test::{Token, assert_tokens};
+        use super::TransferEncoding;
+
+        macro_rules! serde_token_tests {
+            ($([$lname:ident, $hname:ident, $s:tt]),*) => ($(
+                #[test]
+                fn $lname() {
+                    assert_tokens(&TransferEncoding::$hname, &[
+                        Token::UnitVariant {
+                            name: "TransferEncoding",
+                            variant: $s
+                        }
+                    ])
+                }
+            )*);
+        }
+
+        serde_token_tests! {
+            [_7bit, _7Bit, "7bit"],
+            [_8bit, _8Bit, "8bit"],
+            [binary, Binary, "binary"],
+            [quoted_printable, QuotedPrintable, "quoted-printable"],
+            [base64, Base64, "base64"]
+        }
+
+    }
 }
 
 

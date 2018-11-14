@@ -42,6 +42,8 @@ pub use self::cfws::{ CFWS, FWS };
 mod media_type;
 pub use self::media_type::*;
 
+pub type ContentType = MediaType;
+
 mod path;
 pub use self::path::Path;
 

@@ -132,9 +132,10 @@ extern crate total_order_multi_map;
 #[doc(hidden)]
 pub extern crate mail_common as __common;
 
-#[cfg(feature="serde-impl")]
-#[macro_use]
+#[cfg(feature="serde")]
 extern crate serde;
+#[cfg(all(test, feature="serde"))]
+extern crate serde_test;
 
 #[cfg(all(test, not(feature="traceing")))]
 compile_error! { "testing needs feature `traceing` to be enabled" }

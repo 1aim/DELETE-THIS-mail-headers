@@ -5,8 +5,8 @@ use std::borrow::ToOwned;
 use owning_ref::OwningRef;
 use soft_ascii_string::{SoftAsciiString, SoftAsciiStr};
 
-#[cfg(feature="serde-impl")]
-use serde;
+#[cfg(feature="serde")]
+use serde::{Serialize, Deserialize, Serializer, Deserializer, de::Error as __Error};
 
 
 /// InnerAscii is string data container which can contain either a
@@ -115,10 +115,10 @@ macro_rules! inner_impl {
             }
         }
 
-        #[cfg(feature="serde-impl")]
-        impl serde::Serialize for $name {
+        #[cfg(feature="serde")]
+        impl Serialize for $name {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-                where S: serde::Serializer
+                where S: Serializer
             {
                 let borrowed: &$borrowed_form = &*self;
                 let as_ref: &str = borrowed.as_ref();
@@ -155,12 +155,36 @@ impl InnerAscii {
     }
 }
 
+#[cfg(feature="serde")]
+impl<'de> Deserialize<'de> for InnerAscii {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        let content = String::deserialize(deserializer)
+            .map_err(|err| D::Error::custom(err))?;
+        let content = SoftAsciiString::from_string(content)
+            .map_err(|err| D::Error::custom(err))?;
+        Ok(InnerAscii::from(content))
+    }
+}
+
 impl InnerUtf8 {
     pub fn as_str( &self ) -> &str {
         match *self {
             InnerUtf8::Owned( ref owned ) => owned.as_str(),
             InnerUtf8::Shared( ref shared ) => &**shared
         }
+    }
+}
+
+#[cfg(feature="serde")]
+impl<'de> Deserialize<'de> for InnerUtf8 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        let content = String::deserialize(deserializer)
+            .map_err(|err| D::Error::custom(err))?;
+        Ok(InnerUtf8::from(content))
     }
 }
 

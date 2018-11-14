@@ -1,16 +1,28 @@
-use std::ops::Deref;
-use std::str::FromStr;
+use std::{
+    ops::Deref,
+    str::FromStr
+};
+#[cfg(feature="serde")]
+use std::fmt;
 
+#[cfg(feature="serde")]
+use serde::{Serialize, Serializer, Deserialize, Deserializer, de::{self, Visitor}};
 use soft_ascii_string::{SoftAsciiStr,SoftAsciiChar};
 
+use mime::{
+    MediaType as _MediaType,
+    Name, AnyMediaType,
+    spec::{MimeSpec, Ascii, Internationalized, Modern}
+};
+use common::{
+    error::EncodingError,
+    encoder::{EncodingWriter, EncodableInHeader}
+};
 
-use mime::{MediaType as _MediaType, Name, AnyMediaType};
-use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
-
-use common::error::EncodingError;
-use common::encoder::{EncodingWriter, EncodableInHeader};
-use ::HeaderTryFrom;
-use ::error::ComponentCreationError;
+use crate::{
+    HeaderTryFrom,
+    error::ComponentCreationError
+};
 
 
 #[derive(Debug, Clone)]
@@ -181,6 +193,46 @@ impl EncodableInHeader for  MediaType {
 
     fn boxed_clone(&self) -> Box<EncodableInHeader> {
         Box::new(self.clone())
+    }
+}
+
+
+#[cfg(feature="serde")]
+impl Serialize for MediaType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_str(self.as_str_repr())
+    }
+}
+
+#[cfg(feature="serde")]
+impl<'de> Deserialize<'de> for MediaType {
+
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct MediaTypeVisitor;
+
+        impl<'de> Visitor<'de> for MediaTypeVisitor {
+            type Value = MediaType;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "a string representing a MediaType")
+            }
+
+            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let mt = s.parse()
+                    .map_err(|err| E::custom(err))?;
+
+                Ok(mt)
+            }
+        }
+
+        deserializer.deserialize_str(MediaTypeVisitor)
     }
 }
 
