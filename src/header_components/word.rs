@@ -1,11 +1,11 @@
 use quoted_string;
 
-use common::grammar::is_atext;
-use common::grammar::encoded_word::EncodedWordContext;
-use common::error::{EncodingError, EncodingErrorKind};
-use common::encoder::{EncodingWriter, EncodableInHeader};
-use common::bind::encoded_word::{EncodedWordEncoding, WriterWrapper};
-use common::bind::quoted_string::{MailQsSpec, InternationalizedMailQsSpec};
+use internals::grammar::is_atext;
+use internals::grammar::encoded_word::EncodedWordContext;
+use internals::error::{EncodingError, EncodingErrorKind};
+use internals::encoder::{EncodingWriter, EncodableInHeader};
+use internals::bind::encoded_word::{EncodedWordEncoding, WriterWrapper};
+use internals::bind::quoted_string::{MailQsSpec, InternationalizedMailQsSpec};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use ::data::Input;
@@ -117,10 +117,10 @@ pub fn do_encode_word<'a,'b: 'a>(
 mod test {
     use std::mem;
 
-    use common::MailType;
-    use common::encoder::EncodingBuffer;
-    use common::encoder::TraceToken::*;
-    use common::encoder::simplify_trace_tokens;
+    use internals::MailType;
+    use internals::encoder::EncodingBuffer;
+    use internals::encoder::TraceToken::*;
+    use internals::encoder::simplify_trace_tokens;
 
     use super::*;
     use super::super::FWS;

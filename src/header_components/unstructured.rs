@@ -4,10 +4,10 @@ use std::fmt::{self, Display};
 use failure::Fail;
 use soft_ascii_string::SoftAsciiChar;
 
-use common::grammar::is_vchar;
-use common::error::{EncodingError, EncodingErrorKind};
-use common::encoder::{EncodingWriter, EncodableInHeader};
-use common::bind::encoded_word::{EncodedWordEncoding, WriterWrapper};
+use internals::grammar::is_vchar;
+use internals::error::{EncodingError, EncodingErrorKind};
+use internals::encoder::{EncodingWriter, EncodableInHeader};
+use internals::bind::encoded_word::{EncodedWordEncoding, WriterWrapper};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use ::data::Input;

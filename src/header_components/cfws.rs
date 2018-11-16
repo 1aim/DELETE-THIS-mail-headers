@@ -1,5 +1,5 @@
-use common::error::EncodingError;
-use common::encoder::{EncodableInHeader, EncodingWriter};
+use internals::error::EncodingError;
+use internals::encoder::{EncodableInHeader, EncodingWriter};
 
 //FEATURE_TODO(fws_controll): allow controlling the amount of WS and if a CRLF should be used in FWS
 //  this is also usefull for parsing and keeping information about FWS structure

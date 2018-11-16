@@ -2,8 +2,8 @@ use chrono;
 use soft_ascii_string::SoftAsciiString;
 
 
-use common::encoder::{EncodingWriter, EncodableInHeader};
-use common::error::EncodingError;
+use internals::encoder::{EncodingWriter, EncodableInHeader};
+use internals::error::EncodingError;
 use ::HeaderTryFrom;
 use ::error::ComponentCreationError;
 

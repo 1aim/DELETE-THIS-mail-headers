@@ -2,7 +2,7 @@ use std::any::TypeId;
 use std::ops::{Deref, DerefMut};
 use std::fmt::{self, Debug};
 
-use common::{
+use internals::{
     error::EncodingError,
     encoder::{
         EncodableInHeader,

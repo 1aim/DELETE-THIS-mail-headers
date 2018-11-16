@@ -14,7 +14,7 @@ use mime::{
     Name, AnyMediaType,
     spec::{MimeSpec, Ascii, Internationalized, Modern}
 };
-use common::{
+use internals::{
     error::EncodingError,
     encoder::{EncodingWriter, EncodableInHeader}
 };

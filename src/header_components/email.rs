@@ -7,17 +7,17 @@ use soft_ascii_string::{SoftAsciiStr, SoftAsciiString, SoftAsciiChar};
 use mime::spec::{MimeSpec, Ascii, Internationalized, Modern};
 use quoted_string::quote_if_needed;
 
-use common::error::{EncodingError, EncodingErrorKind};
-use common::grammar::{
+use internals::error::{EncodingError, EncodingErrorKind};
+use internals::grammar::{
     is_ascii,
     is_atext,
     is_dtext,
     is_ws,
 };
-use common::MailType;
-use common::encoder::{EncodingWriter, EncodableInHeader};
-use common::bind::idna;
-use common::bind::quoted_string::UnquotedDotAtomTextValidator;
+use internals::MailType;
+use internals::encoder::{EncodingWriter, EncodableInHeader};
+use internals::bind::idna;
+use internals::bind::quoted_string::UnquotedDotAtomTextValidator;
 
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::data::{Input, SimpleItem, InnerUtf8 };
@@ -288,7 +288,7 @@ impl Deref for Domain {
 
 #[cfg(test)]
 mod test {
-    use common::encoder::EncodingBuffer;
+    use internals::encoder::EncodingBuffer;
     use super::*;
 
     #[test]

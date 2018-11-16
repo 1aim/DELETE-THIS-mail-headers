@@ -1,7 +1,7 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::EncodingError;
-use common::encoder::{EncodingWriter, EncodableInHeader};
+use internals::error::EncodingError;
+use internals::encoder::{EncodingWriter, EncodableInHeader};
 
 use super::word::{ Word, do_encode_word };
 use super::{ Email, Domain };
@@ -44,8 +44,8 @@ impl EncodableInHeader for  ReceivedToken {
 #[cfg(test)]
 mod test {
     use ::HeaderTryFrom;
-    use common::MailType;
-    use common::encoder::EncodingBuffer;
+    use internals::MailType;
+    use internals::encoder::EncodingBuffer;
     use super::*;
 
     ec_test!{ a_domain, {

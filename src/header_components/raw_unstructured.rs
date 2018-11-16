@@ -1,11 +1,11 @@
-//! mail-common does not ship with any predefined headers and components
+//! mail-internals does not ship with any predefined headers and components
 //! except `RawUnstructured`, `TransferEncoding` and `DateTime`
 
 use soft_ascii_string::SoftAsciiStr;
 
-use common::grammar::is_vchar;
-use common::error::{EncodingError, EncodingErrorKind};
-use common::encoder::{EncodingWriter, EncodableInHeader};
+use internals::grammar::is_vchar;
+use internals::error::{EncodingError, EncodingErrorKind};
+use internals::encoder::{EncodingWriter, EncodableInHeader};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use ::data::Input;

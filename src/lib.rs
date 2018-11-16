@@ -130,7 +130,7 @@ extern crate total_order_multi_map;
 //FIXME[rust/macros use private] remove pub re-export
 #[cfg_attr(test, macro_use)]
 #[doc(hidden)]
-pub extern crate mail_common as __common;
+pub extern crate mail_internals as __internals;
 
 #[cfg(feature="serde")]
 extern crate serde;
@@ -167,4 +167,4 @@ pub use self::map::HeaderMap;
 
 // I can not reexport a private think anymore, so I need to reexport the
 // extern crate and then make the normal name available, too
-use __common as common;
+use __internals as internals;

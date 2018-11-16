@@ -1,7 +1,7 @@
 use soft_ascii_string::SoftAsciiStr;
 
-use common::error::EncodingError;
-use common::encoder::{EncodingWriter, EncodableInHeader};
+use internals::error::EncodingError;
+use internals::encoder::{EncodingWriter, EncodableInHeader};
 
 #[cfg(feature="serde")]
 use serde::{Serialize, Deserialize};

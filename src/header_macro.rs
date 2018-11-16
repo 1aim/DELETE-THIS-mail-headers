@@ -116,7 +116,7 @@ macro_rules! def_headers {
         #[test]
         fn $tn() {
             use std::collections::HashSet;
-            use $crate::__common::encoder::EncodableInHeader;
+            use $crate::__internals::encoder::EncodableInHeader;
 
             let mut name_set = HashSet::new();
             for name in HEADER_NAMES {

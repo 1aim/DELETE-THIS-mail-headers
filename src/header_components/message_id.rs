@@ -10,8 +10,8 @@ use serde::{
     de::Error
 };
 
-use common::error::EncodingError;
-use common::encoder::{EncodingWriter, EncodableInHeader};
+use internals::error::EncodingError;
+use internals::encoder::{EncodingWriter, EncodableInHeader};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use ::data::{ Input, SimpleItem };
@@ -186,8 +186,8 @@ impl EncodableInHeader for  MessageIdList {
 
 mod parser_parts {
     use nom::IResult;
-    use common::grammar::{is_atext, is_dtext};
-    use common::MailType;
+    use internals::grammar::{is_atext, is_dtext};
+    use internals::MailType;
 
     pub fn parse_message_id( input: &str) -> IResult<&str, (&str, &str)> {
         do_parse!( input,
@@ -291,8 +291,8 @@ mod parser_parts {
 
 #[cfg(test)]
 mod test {
-    use common::MailType;
-    use common::encoder::EncodingBuffer;
+    use internals::MailType;
+    use internals::encoder::EncodingBuffer;
     use super::*;
 
     ec_test!{ new, {

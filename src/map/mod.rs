@@ -286,7 +286,7 @@ impl HeaderMap {
         })
     }
 
-    /// Returns a a mutable reference to the header associated with the given header kind.__common
+    /// Returns a a mutable reference to the header associated with the given header kind.__internals
     ///
     /// See `HeaderMap::get_single` for more details.
     #[inline]
@@ -297,7 +297,7 @@ impl HeaderMap {
         self._get_single_mut::<H>()
     }
 
-    /// Returns a a mutable reference to the header associated with the given header kind.__common
+    /// Returns a a mutable reference to the header associated with the given header kind.__internals
     ///
     /// See `HeaderMap::_get_single` for more details.
     pub fn _get_single_mut<H>(&mut self)
@@ -692,8 +692,8 @@ mod test {
     use failure::Context;
     use soft_ascii_string::SoftAsciiStr;
 
-    use common::error::{EncodingError, EncodingErrorKind};
-    use common::encoder::{EncodableInHeader, EncodingWriter};
+    use internals::error::{EncodingError, EncodingErrorKind};
+    use internals::encoder::{EncodableInHeader, EncodingWriter};
 
     use ::HeaderTryFrom;
     use ::error::{ComponentCreationError, HeaderValidationError};

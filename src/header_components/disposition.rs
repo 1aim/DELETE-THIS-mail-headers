@@ -13,8 +13,8 @@ use serde::{
     Deserialize, Deserializer,
 };
 
-use common::error::{EncodingError, EncodingErrorKind};
-use common::encoder::{EncodableInHeader, EncodingWriter};
+use internals::error::{EncodingError, EncodingErrorKind};
+use internals::encoder::{EncodableInHeader, EncodingWriter};
 use ::HeaderTryFrom;
 use ::error::ComponentCreationError;
 

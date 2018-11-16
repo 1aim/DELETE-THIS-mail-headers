@@ -1,5 +1,5 @@
-use common::grammar::{is_vchar, is_ws};
-use common::MailType;
+use internals::grammar::{is_vchar, is_ws};
+use internals::MailType;
 
 
 #[derive(Copy, Clone, Debug, Fail, PartialEq, Eq, Hash)]

@@ -11,7 +11,7 @@ repository = "https://github.com/1aim/mail-headers"
 
 [features]
 serde-impl = [ "serde", "vec1/serde" ]
-traceing = [ "mail-common/traceing" ]
+traceing = [ "mail-internals/traceing" ]
 
 [dependencies]
 failure = "0.1"
@@ -19,7 +19,7 @@ owning_ref = "0.4"
 nom = "3.1.0"
 soft-ascii-string = "1"
 quoted-string = "0.6"
-mail-common = { git="https://github.com/1aim/mail-common" }
+mail-internals = { git="https://github.com/1aim/mail-internal" }
 vec1 = "1"
 chrono = "0.4"
 total-order-multi-map = "0.4.5"

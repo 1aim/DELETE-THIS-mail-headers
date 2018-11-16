@@ -2,8 +2,8 @@ use std::iter::IntoIterator;
 use vec1::Vec1;
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::EncodingError;
-use common::encoder::{EncodableInHeader, EncodingWriter};
+use internals::error::EncodingError;
+use internals::encoder::{EncodableInHeader, EncodingWriter};
 use ::{ HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 

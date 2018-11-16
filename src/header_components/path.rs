@@ -1,7 +1,7 @@
 use soft_ascii_string::SoftAsciiChar;
 
-use common::error::EncodingError;
-use common::encoder::{EncodingWriter, EncodableInHeader};
+use internals::error::EncodingError;
+use internals::encoder::{EncodingWriter, EncodableInHeader};
 use ::{HeaderTryFrom, HeaderTryInto};
 use ::error::ComponentCreationError;
 use super::Email;

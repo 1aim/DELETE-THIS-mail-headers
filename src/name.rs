@@ -1,7 +1,7 @@
 use std::fmt;
 use soft_ascii_string::SoftAsciiStr;
 
-use common::grammar::is_ftext;
+use internals::grammar::is_ftext;
 
 ///
 /// Note: Normally you will never have the need to create a HeaderName instance by
